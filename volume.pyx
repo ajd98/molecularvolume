@@ -374,6 +374,9 @@ cdef void recurse(int ix, int iy, int iz, int nx, int ny, int nz, double voxel_l
     nsolute: number of solute atoms
     solvent_rad: radius of solvent (which is approximated as a sphere)
     '''
+    cdef int i
+    if ix < 0 or iy < 0 or iz < 0 or ix >= nx or iy >= ny or iz >= nz:
+        return
     if visited_grid[ix,iy,iz]:
         return
     else:
@@ -381,7 +384,19 @@ cdef void recurse(int ix, int iy, int iz, int nx, int ny, int nz, double voxel_l
         x = ix*voxel_len
         y = iy*voxel_len
         z = iz*voxel_len
-        if is_free(
+        if is_free(x, y, z, solute_pos, solute_rad, nsolute, solvent_rad):
+            grid[ix,iy,iz] = 1
+
+            # iterate through moves
+            for i in range(26):
+                dx = moves[i,0]
+                dy = moves[i,1]
+                dz = moves[i,2]
+                recurse(ix+dx, iy+dy, iz+dz, nx, ny, nz, voxel_len, visited_grid,
+                        grid, moves, solute_pos, solute_rad, nsolute, 
+                        solvent_rad)
+        return
+
 
 cdef bint is_free(double voxx, double voxy, double voxz,
         double[:,:] solute_pos, double[:] solute_rad,
