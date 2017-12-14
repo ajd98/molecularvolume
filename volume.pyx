@@ -62,43 +62,53 @@ cdef double dist(double x1, double y1, double z1,
     return sqrt((x2-x1)**2+(y2-y1)**2+(z2-z1)**2)
 
 
-cdef bint find_open(int[:,:] open_arr, int* ix, int* iy, int* iz, int ngridpts) nogil:
+cdef void recurse(int ix, int iy, int iz, int nx, int ny, int nz, double voxel_len,
+        int[:,:,:] visited_grid, int[:,:,:] grid, int[:,:] moves, 
+        double[:,:] solute_pos, double[:] solute_rad, int nsolute,
+        double solvent_rad) nogil:
+    '''
+    ----------
+    Parameters
+    ----------
+    ix: x index of current grid position
+    iy: y index of current grid position
+    iz: z index of current grid position
+    nx: length of grid along x-axis, in voxels
+    ny: length of grid along y-axis, in voxels
+    nz: length of grid along z-axis, in voxels
+    voxel_len: edge length of (cubic) voxel
+    visited_grid: shape (nx, ny, nz) array; 1 if visited, 0 otherwise
+    grid: shape (nx, ny, nz) array; 1 if accessible by moves on solvent; 
+        0 otherwise
+    moves: shape (26,3) array; possible moves
+    solute_pos: shape (nsolute, 3) array; (x,y,z) coordinates of each solute
+        atom
+    solute_rad: shape (nsolute,) array; radius of each solute atom
+    nsolute: number of solute atoms
+    solvent_rad: radius of solvent (which is approximated as a sphere)
+    '''
     cdef int i
-    for i in range(ngridpts):
-        if open_arr[i,0] != -1:
-            ix[0] = open_arr[i,0]
-            iy[0] = open_arr[i,1]
-            iz[0] = open_arr[i,2]
-            open_arr[i,0] = -1
-            open_arr[i,1] = -1
-            open_arr[i,2] = -1
-            return True
-    return False
+    if ix < 0 or iy < 0 or iz < 0 or ix >= nx or iy >= ny or iz >= nz:
+        return
+    if visited_grid[ix,iy,iz]:
+        return
+    else:
+        visited_grid[ix,iy,iz] = 1
+        x = ix*voxel_len
+        y = iy*voxel_len
+        z = iz*voxel_len
+        if is_free(x, y, z, solute_pos, solute_rad, nsolute, solvent_rad):
+            grid[ix,iy,iz] = 1
 
-
-cdef void open_voxel(int[:,:] open_arr, int arraylen, int ix, int iy, int iz) nogil:
-    '''
-    Open the voxel (ix, iy, iz)
-    '''
-    for i in range(arraylen):
-        if open_arr[i,0] == -1:
-            open_arr[i,0] = ix
-            open_arr[i,1] = iy
-            open_arr[i,2] = iz
-            break
-    return 
-
-cdef void close_voxel(int[:,:] open_arr, int arraylen, int ix, int iy, int iz) nogil:
-    '''
-    close the voxel (ix, iy, iz)
-    '''
-    for i in range(arraylen):
-        if open_arr[i,0] == ix and open_arr[i,1] == iy and open_arr[i,2] == iz:
-            open_arr[i,0] = -1
-            open_arr[i,1] = -1
-            open_arr[i,2] = -1
-            break
-    return 
+            # iterate through moves
+            for i in range(26):
+                dx = moves[i,0]
+                dy = moves[i,1]
+                dz = moves[i,2]
+                recurse(ix+dx, iy+dy, iz+dz, nx, ny, nz, voxel_len, visited_grid,
+                        grid, moves, solute_pos, solute_rad, nsolute, 
+                        solvent_rad)
+        return
 
 
 cpdef double volume(numpy.ndarray[numpy.float64_t, ndim=2] _solute_pos, 
@@ -138,7 +148,6 @@ cpdef double volume(numpy.ndarray[numpy.float64_t, ndim=2] _solute_pos,
         double[:,:] solvent_ceil = numpy.zeros((_solute_pos.shape[0], solute_pos.shape[1]), dtype=numpy.float64)
         int nsolvent = _solute_pos.shape[0]
         int nsolute = _solvent_pos.shape[0]
-        bint check
         int i, j, k
         double voxel_len = _voxel_len
         double solvent_rad = _solvent_rad
@@ -176,16 +185,7 @@ cpdef double volume(numpy.ndarray[numpy.float64_t, ndim=2] _solute_pos,
     # char is 8-bit signed integer
     cdef unsigned char[:,:,:] grid = numpy.zeros((nx, ny, nz), dtype=numpy.uint8)
     cdef unsigned char[:,:,:] visited_grid = numpy.zeros((nx, ny, nz), dtype=numpy.uint8)
-    # initialize grid to 0
 
-    cdef int ngridpts = nx*ny*nz
-    cdef int[:,:] open_arr = numpy.ones((ngridpts,3), dtype=numpy.int32)
-    print(ngridpts)
-
-    with nogil:
-        for i in range(ngridpts):
-            for j in range(3):
-                open_arr[i,j] = -1 
 
     # shift the solute positions by the appropriate amount
     with nogil:
@@ -323,23 +323,38 @@ cpdef double volume(numpy.ndarray[numpy.float64_t, ndim=2] _solute_pos,
                         recurse(ix+dx, iy+dy, iz+dz)
                 return 
             '''
+
             if is_free(x, y, z, solute_pos, solute_rad, nsolute, solvent_rad):
-                recurse(ix, iy, iz, visited_grid, grid, moves)
+                recurse(ix, iy, iz, nx, ny, nz, voxel_len, visited_grid, grid, 
+                        moves, solute_pos, solute_rad, nsolute, solvent_rad)
 
             if is_free(x, y, Z, solute_pos, solute_rad, nsolute, solvent_rad):
-                recurse(ix, iy, iZ, visited_grid, grid, moves)
+                recurse(ix, iy, iZ, nx, ny, nz, voxel_len, visited_grid, grid, 
+                        moves, solute_pos, solute_rad, nsolute, solvent_rad)
 
             if is_free(x, Y, z, solute_pos, solute_rad, nsolute, solvent_rad):
+                recurse(ix, iY, iz, nx, ny, nz, voxel_len, visited_grid, grid, 
+                        moves, solute_pos, solute_rad, nsolute, solvent_rad)
 
             if is_free(x, Y, Z, solute_pos, solute_rad, nsolute, solvent_rad):
+                recurse(ix, iY, iZ, nx, ny, nz, voxel_len, visited_grid, grid, 
+                        moves, solute_pos, solute_rad, nsolute, solvent_rad)
 
             if is_free(X, y, z, solute_pos, solute_rad, nsolute, solvent_rad):
+                recurse(iX, iy, iz, nx, ny, nz, voxel_len, visited_grid, grid, 
+                        moves, solute_pos, solute_rad, nsolute, solvent_rad)
 
             if is_free(X, y, Z, solute_pos, solute_rad, nsolute, solvent_rad):
+                recurse(iX, iy, iZ, nx, ny, nz, voxel_len, visited_grid, grid, 
+                        moves, solute_pos, solute_rad, nsolute, solvent_rad)
 
             if is_free(X, Y, z, solute_pos, solute_rad, nsolute, solvent_rad):
+                recurse(iX, iY, iz, nx, ny, nz, voxel_len, visited_grid, grid, 
+                        moves, solute_pos, solute_rad, nsolute, solvent_rad)
 
             if is_free(X, Y, Z, solute_pos, solute_rad, nsolute, solvent_rad):
+                recurse(iX, iY, iZ, nx, ny, nz, voxel_len, visited_grid, grid, 
+                        moves, solute_pos, solute_rad, nsolute, solvent_rad)
 
         #find the volume
         for i in range(nx):
@@ -349,55 +364,3 @@ cpdef double volume(numpy.ndarray[numpy.float64_t, ndim=2] _solute_pos,
         vol = (1-float(ptcnt)/float(nx*ny*nz))*(x_max-x_min)*(y_max-y_min)*(z_max-z_min)
         return vol
 
-cdef void recurse(int ix, int iy, int iz, int nx, int ny, int nz, double voxel_len,
-        int[:,:,:] visited_grid, int[:,:,:] grid, int[:,:] moves, 
-        double[:,:] solute_pos, double[:] solute_rad, int nsolute,
-        double solvent_rad) nogil:
-    '''
-    ----------
-    Parameters
-    ----------
-    ix: x index of current grid position
-    iy: y index of current grid position
-    iz: z index of current grid position
-    nx: length of grid along x-axis, in voxels
-    ny: length of grid along y-axis, in voxels
-    nz: length of grid along z-axis, in voxels
-    voxel_len: edge length of (cubic) voxel
-    visited_grid: shape (nx, ny, nz) array; 1 if visited, 0 otherwise
-    grid: shape (nx, ny, nz) array; 1 if accessible by moves on solvent; 
-        0 otherwise
-    moves: shape (26,3) array; possible moves
-    solute_pos: shape (nsolute, 3) array; (x,y,z) coordinates of each solute
-        atom
-    solute_rad: shape (nsolute,) array; radius of each solute atom
-    nsolute: number of solute atoms
-    solvent_rad: radius of solvent (which is approximated as a sphere)
-    '''
-    cdef int i
-    if ix < 0 or iy < 0 or iz < 0 or ix >= nx or iy >= ny or iz >= nz:
-        return
-    if visited_grid[ix,iy,iz]:
-        return
-    else:
-        visited_grid[ix,iy,iz] = 1
-        x = ix*voxel_len
-        y = iy*voxel_len
-        z = iz*voxel_len
-        if is_free(x, y, z, solute_pos, solute_rad, nsolute, solvent_rad):
-            grid[ix,iy,iz] = 1
-
-            # iterate through moves
-            for i in range(26):
-                dx = moves[i,0]
-                dy = moves[i,1]
-                dz = moves[i,2]
-                recurse(ix+dx, iy+dy, iz+dz, nx, ny, nz, voxel_len, visited_grid,
-                        grid, moves, solute_pos, solute_rad, nsolute, 
-                        solvent_rad)
-        return
-
-
-cdef bint is_free(double voxx, double voxy, double voxz,
-        double[:,:] solute_pos, double[:] solute_rad,
-        int nsolute, double solvent_rad) nogil:
