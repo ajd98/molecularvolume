@@ -1,5 +1,6 @@
 #!python
-#cython: boundscheck=False, wraparound=False
+#cython: boundscheck=False, wraparound=False, profile=True, linetrace=True
+#distutils: define_macros=CYTHON_TRACE_NOGIL=1
 cimport cython
 cimport numpy
 import numpy
@@ -179,6 +180,7 @@ cpdef double volume(numpy.ndarray[numpy.float64_t, ndim=2] _solute_pos,
 
     cdef int ngridpts = nx*ny*nz
     cdef int[:,:] open_arr = numpy.ones((ngridpts,3), dtype=numpy.int32)
+    print(ngridpts)
 
     with nogil:
         for i in range(ngridpts):
@@ -381,6 +383,6 @@ cpdef double volume(numpy.ndarray[numpy.float64_t, ndim=2] _solute_pos,
             for j in range(ny):
                 for k in range(nz):
                     ptcnt += grid[i,j,k]
-        vol = float(ptcnt)/float(nx*ny*nz)*(x_max-x_min)*(y_max-y_min)*(z_max-z_min)
+        vol = (1-float(ptcnt)/float(nx*ny*nz))*(x_max-x_min)*(y_max-y_min)*(z_max-z_min)
         return vol
 
