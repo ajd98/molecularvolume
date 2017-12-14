@@ -63,7 +63,7 @@ cdef double dist(double x1, double y1, double z1,
 
 
 cdef void recurse(int ix, int iy, int iz, int nx, int ny, int nz, double voxel_len,
-        int[:,:,:] visited_grid, int[:,:,:] grid, int[:,:] moves, 
+        unsigned char[:,:,:] visited_grid, unsigned char[:,:,:] grid, int[:,:] moves, 
         double[:,:] solute_pos, double[:] solute_rad, int nsolute,
         double solvent_rad) nogil:
     '''
@@ -87,9 +87,12 @@ cdef void recurse(int ix, int iy, int iz, int nx, int ny, int nz, double voxel_l
     nsolute: number of solute atoms
     solvent_rad: radius of solvent (which is approximated as a sphere)
     '''
-    cdef int i
+    cdef int i, dx, dy, dz
+
+    # check that we are within the bounds of the grid
     if ix < 0 or iy < 0 or iz < 0 or ix >= nx or iy >= ny or iz >= nz:
         return
+    # check whether this grid point has been visited
     if visited_grid[ix,iy,iz]:
         return
     else:
@@ -219,40 +222,40 @@ cpdef double volume(numpy.ndarray[numpy.float64_t, ndim=2] _solute_pos,
             solvent_ceil[isolute,2] = (floor(solz/voxel_len)+1)*voxel_len
 
 
-    cdef int[:,:] movelist = numpy.array([[0,0,-1],
-                                          [0,0,1],
-                                                     
-                                          [0,-1,-1],
-                                          [0,-1,0],
-                                          [0,-1,1],
-                                                     
-                                          [0,1,-1],
-                                          [0,1,0],
-                                          [0,1,1],
-                                                     
-                                          [-1,-1,-1],
-                                          [-1,-1,0],
-                                          [-1,-1,1],
-                                                     
-                                          [-1,0,-1],
-                                          [-1,0,0],
-                                          [-1,0,1],
-                                                     
-                                          [-1,1,-1],
-                                          [-1,1,0],
-                                          [-1,1,1],
-                                                     
-                                          [1,-1,-1],
-                                          [1,-1,0],
-                                          [1,-1,1],
-                                                     
-                                          [1,0,-1],
-                                          [1,0,0],
-                                          [1,0,1],
-                                                     
-                                          [1,1,-1],
-                                          [1,1,0],
-                                          [1,1,1]], dtype=numpy.int32)
+    cdef int[:,:] moves = numpy.array([[0,0,-1],
+                                       [0,0,1],
+                                                  
+                                       [0,-1,-1],
+                                       [0,-1,0],
+                                       [0,-1,1],
+                                                  
+                                       [0,1,-1],
+                                       [0,1,0],
+                                       [0,1,1],
+                                                  
+                                       [-1,-1,-1],
+                                       [-1,-1,0],
+                                       [-1,-1,1],
+                                                  
+                                       [-1,0,-1],
+                                       [-1,0,0],
+                                       [-1,0,1],
+                                                  
+                                       [-1,1,-1],
+                                       [-1,1,0],
+                                       [-1,1,1],
+                                                  
+                                       [1,-1,-1],
+                                       [1,-1,0],
+                                       [1,-1,1],
+                                                  
+                                       [1,0,-1],
+                                       [1,0,0],
+                                       [1,0,1],
+                                                  
+                                       [1,1,-1],
+                                       [1,1,0],
+                                       [1,1,1]], dtype=numpy.int32)
 
     cdef int ptcnt = 0
     cdef double vol
