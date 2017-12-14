@@ -80,6 +80,18 @@ cdef void open_voxel(int *open_arr[:,:], int arraylen, int ix, int iy, int iz):
             break
     return 
 
+cdef void close_voxel(int *open_arr[:,:], int arraylen, int ix, int iy, int iz):
+    '''
+    close the voxel (ix, iy, iz)
+    '''
+    for i in range(arraylen):
+        if *open_arr[i,0] == ix and *open_arr[i,1] == iy and *open_arr[i,2] == iz:
+            *open_arr[i,0] = -1
+            *open_arr[i,1] = -1
+            *open_arr[i,2] = -1
+            break
+    return 
+
 
 cpdef double volume(numpy.ndarray[numpy.float64_t, ndim=2] _solute_pos, 
                     numpy.ndarray[numpy.float64_t, ndim=1] _solute_rad, 
@@ -151,6 +163,8 @@ cpdef double volume(numpy.ndarray[numpy.float64_t, ndim=2] _solute_pos,
 
     cdef bool[nx,ny,nz] grid = numpy.zeros((nx,ny,nz), dtype=bool)
     cdef bool[nx,ny,nz] visited_grid = numpy.zeros((nx,ny,nz), dtype=bool)
+    cdef int ngridpts = nx*ny*nz
+    cdef open_arr[ngridpts] = numpy.ones(ngridpts)*-1
 
     # shift the solute positions by the appropriate amount
     # (will this work with C-style arrays?)
@@ -335,8 +349,18 @@ cpdef double volume(numpy.ndarray[numpy.float64_t, ndim=2] _solute_pos,
                         iX = movelist[imove][0] + ix
                         iY = movelist[imove][1] + iy
                         iZ = movelist[imove][2] + iz
-                        if not visited_grid[iX, iY, iZ]:
-                            open_voxel(&open_arr, ngridpts, iX, iY, iZ)
-                            visted_grid[iX, iY, iZ] = True
-                    close_voxel(&open_arr, ngridpts, ix, iy, iz)
+                        # Check if the move is outside the grid
+                        if iX >= 0 and iY >= 0 and iZ >= 0 and iX < nx and iY < nY and iZ < nZ:
+                            if not visited_grid[iX, iY, iZ]:
+                                open_voxel(&open_arr, ngridpts, iX, iY, iZ)
+                                visted_grid[iX, iY, iZ] = True
+                close_voxel(&open_arr, ngridpts, ix, iy, iz)
+        #find the volume
+        cdef int ptcnt = 0
+        for i in range(nx):
+            for j in range(ny):
+                for k in range(nz):
+                    ptcnt += grid[i,j,k]
+        vol = float(ptcnt)/float(nx*ny*nz)*(x_max-x_min)*(y_max-y_min)*(z_max-z_min)
+        return vol
 
