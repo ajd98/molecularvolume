@@ -1,3 +1,5 @@
+#!python
+#cython: boundscheck=False, wraparound=False
 cimport cython
 cimport numpy
 import numpy
@@ -133,8 +135,8 @@ cpdef double volume(numpy.ndarray[numpy.float64_t, ndim=2] _solute_pos,
         double solx, soly, solz
         double[:,:] solvent_floor = numpy.zeros((_solute_pos.shape[0], solute_pos.shape[1]), dtype=numpy.float64)
         double[:,:] solvent_ceil = numpy.zeros((_solute_pos.shape[0], solute_pos.shape[1]), dtype=numpy.float64)
-        int nsolvent
-        int solute
+        int nsolvent = _solute_pos.shape[0]
+        int nsolute = _solvent_pos.shape[0]
         bint check
         int i, j, k
         double voxel_len = _voxel_len
@@ -170,8 +172,9 @@ cpdef double volume(numpy.ndarray[numpy.float64_t, ndim=2] _solute_pos,
     ny = numpy.ceil((x_max - x_min)/voxel_len) + 1
     nz = numpy.ceil((x_max - x_min)/voxel_len) + 1
 
-    cdef bint[:,:,:] grid = numpy.zeros((nx, ny, nz), dtype=numpy.bool_)
-    cdef bint[:,:,:] visited_grid = numpy.zeros((nx, ny, nz), dtype=numpy.bool_)
+    # char is 8-bit signed integer
+    cdef unsigned char[:,:,:] grid = numpy.zeros((nx, ny, nz), dtype=numpy.uint8)
+    cdef unsigned char[:,:,:] visited_grid = numpy.zeros((nx, ny, nz), dtype=numpy.uint8)
     # initialize grid to 0
 
     cdef int ngridpts = nx*ny*nz
@@ -183,14 +186,15 @@ cpdef double volume(numpy.ndarray[numpy.float64_t, ndim=2] _solute_pos,
                 open_arr[i,j] = -1 
 
     # shift the solute positions by the appropriate amount
-    # (will this work with C-style arrays?)
-    solute_pos[:,0] -= x_min
-    solute_pos[:,1] -= y_min
-    solute_pos[:,2] -= z_min
-
-    solvent_pos[:,0] -= x_min
-    solvent_pos[:,1] -= y_min
-    solvent_pos[:,2] -= z_min
+    with nogil:
+        for i in range(nsolute):
+            solute_pos[i,0] -= x_min
+            solute_pos[i,1] -= y_min
+            solute_pos[i,2] -= z_min
+        for i in range(nsolvent):
+            solvent_pos[i,0] -= x_min
+            solvent_pos[i,1] -= y_min
+            solvent_pos[i,2] -= z_min
 
     # These will be used to find the voxels surrounding each solvent
     nsolvent = _solvent_pos.shape[0]
