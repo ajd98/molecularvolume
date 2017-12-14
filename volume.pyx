@@ -309,75 +309,38 @@ cpdef double volume(numpy.ndarray[numpy.float64_t, ndim=2] _solute_pos,
             #  (X,Y,Z)
             # 
             '''
-            open voxels surrounding water
-            assign ``visited_grid`` to one for each of the open voxels
-
-            while there are open voxels:
-                for each open voxel:
-                    if voxel is free:
-                        assign corresponding value in ``grid`` to one
-                        for each adjacent voxel:
-                            if adjacent voxel is not visited:
-                                open voxel
-                                assign corresponding value in ``visited_grid`` to one 
-                    close voxel
-                    
+            cdef void recurse(int ix, int iy, int iz):
+                if visited_grid[ix, iy, iz]:
+                    return # termination condition
+                else:
+                    visited_grid[ix, iy, iz] = 1
+                    if is_free(ix, iy, iz):
+                        grid[ix, iy, iz] = 1
+                    for i in range(26):
+                        dx = moves[i,0]
+                        dy = moves[i,1]
+                        dz = moves[i,2]
+                        recurse(ix+dx, iy+dy, iz+dz)
+                return 
             '''
             if is_free(x, y, z, solute_pos, solute_rad, nsolute, solvent_rad):
-                open_voxel(open_arr, ngridpts, ix, iy, iz)
-                visited_grid[ix,iy,iz] = 1
+                recurse(ix, iy, iz, visited_grid, grid, moves)
 
             if is_free(x, y, Z, solute_pos, solute_rad, nsolute, solvent_rad):
-                open_voxel(open_arr, ngridpts, ix, iy, iZ)
-                visited_grid[ix,iy,iZ] = 1
+                recurse(ix, iy, iZ, visited_grid, grid, moves)
 
             if is_free(x, Y, z, solute_pos, solute_rad, nsolute, solvent_rad):
-                open_voxel(open_arr, ngridpts, ix, iY, iz)
-                visited_grid[ix,iY,iz] = 1
 
             if is_free(x, Y, Z, solute_pos, solute_rad, nsolute, solvent_rad):
-                open_voxel(open_arr, ngridpts, ix, iY, iZ)
-                visited_grid[ix,iY,iZ] = 1
 
             if is_free(X, y, z, solute_pos, solute_rad, nsolute, solvent_rad):
-                open_voxel(open_arr, ngridpts, iX, iy, iz)
-                visited_grid[iX,iy,iz] = 1
 
             if is_free(X, y, Z, solute_pos, solute_rad, nsolute, solvent_rad):
-                open_voxel(open_arr, ngridpts, iX, iy, iZ)
-                visited_grid[iX,iy,iZ] = 1
 
             if is_free(X, Y, z, solute_pos, solute_rad, nsolute, solvent_rad):
-                open_voxel(open_arr, ngridpts, iX, iY, iz)
-                visited_grid[iX,iY,iz] = 1
 
             if is_free(X, Y, Z, solute_pos, solute_rad, nsolute, solvent_rad):
-                open_voxel(open_arr, ngridpts, iX, iY, iZ)
-                visited_grid[iX,iY,iZ] = 1
 
-            # now we use ix, iy, and iz for general indexing of the grids
-            # find_open returns false when nothing is open
-            # it also sticks in new values for ix, iy, and iz, so that they 
-            # correspond to open voxels
-            while find_open(open_arr, &ix, &iy, &iz, ngridpts):
-
-                x = voxel_len*ix
-                y = voxel_len*iy
-                z = voxel_len*iz
-
-                if is_free(x, y, z, solute_pos, solute_rad, nsolute, solvent_rad):
-                    grid[ix, iy, iz] = True
-                    # iterate over adjacent voxels
-                    for imove in range(26):
-                        iX = movelist[imove][0] + ix
-                        iY = movelist[imove][1] + iy
-                        iZ = movelist[imove][2] + iz
-                        # Check if the move is outside the grid
-                        if iX >= 0 and iY >= 0 and iZ >= 0 and iX < nx and iY < ny and iZ < nz:
-                            if not visited_grid[iX, iY, iZ]:
-                                open_voxel(open_arr, ngridpts, iX, iY, iZ)
-                                visited_grid[iX, iY, iZ] = True
-                close_voxel(open_arr, ngridpts, ix, iy, iz)
         #find the volume
         for i in range(nx):
             for j in range(ny):
@@ -386,3 +349,40 @@ cpdef double volume(numpy.ndarray[numpy.float64_t, ndim=2] _solute_pos,
         vol = (1-float(ptcnt)/float(nx*ny*nz))*(x_max-x_min)*(y_max-y_min)*(z_max-z_min)
         return vol
 
+cdef void recurse(int ix, int iy, int iz, int nx, int ny, int nz, double voxel_len,
+        int[:,:,:] visited_grid, int[:,:,:] grid, int[:,:] moves, 
+        double[:,:] solute_pos, double[:] solute_rad, int nsolute,
+        double solvent_rad) nogil:
+    '''
+    ----------
+    Parameters
+    ----------
+    ix: x index of current grid position
+    iy: y index of current grid position
+    iz: z index of current grid position
+    nx: length of grid along x-axis, in voxels
+    ny: length of grid along y-axis, in voxels
+    nz: length of grid along z-axis, in voxels
+    voxel_len: edge length of (cubic) voxel
+    visited_grid: shape (nx, ny, nz) array; 1 if visited, 0 otherwise
+    grid: shape (nx, ny, nz) array; 1 if accessible by moves on solvent; 
+        0 otherwise
+    moves: shape (26,3) array; possible moves
+    solute_pos: shape (nsolute, 3) array; (x,y,z) coordinates of each solute
+        atom
+    solute_rad: shape (nsolute,) array; radius of each solute atom
+    nsolute: number of solute atoms
+    solvent_rad: radius of solvent (which is approximated as a sphere)
+    '''
+    if visited_grid[ix,iy,iz]:
+        return
+    else:
+        visited_grid[ix,iy,iz] = 1
+        x = ix*voxel_len
+        y = iy*voxel_len
+        z = iz*voxel_len
+        if is_free(
+
+cdef bint is_free(double voxx, double voxy, double voxz,
+        double[:,:] solute_pos, double[:] solute_rad,
+        int nsolute, double solvent_rad) nogil:
