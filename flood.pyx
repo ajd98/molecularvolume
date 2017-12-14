@@ -54,6 +54,33 @@ cdef double dist(double x1, double y1, double z1,
     return sqrt((x2-x1)**2, (y2-y1)**2, (z2-z1)**2)
 
 
+cdef bool find_open(int[:,:] *open_arr, int *ix, int *iy, int *iz, int ngridpts):
+    cdef int i
+    for i in range(ngridpts):
+        if *open_arr[i,0] != -1:
+            *ix = open_arr[i,0]
+            *iy = open_arr[i,1]
+            *iz = open_arr[i,2]
+            open_arr[i,0] = -1
+            open_arr[i,1] = -1
+            open_arr[i,2] = -1
+            return True
+    return False
+
+
+cdef void open_voxel(int *open_arr[:,:], int arraylen, int ix, int iy, int iz):
+    '''
+    Open the voxel (ix, iy, iz)
+    '''
+    for i in range(arraylen):
+        if *open_arr[i,0] == -1:
+            *open_arr[i,0] = ix
+            *open_arr[i,1] = iy
+            *open_arr[i,2] = iz
+            break
+    return 
+
+
 cpdef double volume(numpy.ndarray[numpy.float64_t, ndim=2] _solute_pos, 
                     numpy.ndarray[numpy.float64_t, ndim=1] _solute_rad, 
                     numpy.ndarray[numpy.float64_t, ndim=2] _solvent_pos, 
@@ -159,6 +186,41 @@ cpdef double volume(numpy.ndarray[numpy.float64_t, ndim=2] _solute_pos,
 
 
     with nogil:
+        cdef int movelist[26,3]
+        movelist[0,:]  = [0,0,-1]
+        movelist[1,:]  = [0,0,1]
+
+        movelist[2,:]  = [0,-1,-1]
+        movelist[3,:]  = [0,-1,0]
+        movelist[4,:]  = [0,-1,1]
+
+        movelist[5,:]  = [0,1,-1]
+        movelist[6,:]  = [0,1,0]
+        movelist[7,:]  = [0,1,1]
+
+        movelist[8,:]  = [-1,-1,-1]
+        movelist[9,:]  = [-1,-1,0]
+        movelist[10,:] = [-1,-1,1]
+
+        movelist[11,:] = [-1,0,-1]
+        movelist[12,:] = [-1,0,0]
+        movelist[13,:] = [-1,0,1]
+
+        movelist[14,:] = [-1,1,-1]
+        movelist[15,:] = [-1,1,0]
+        movelist[16,:] = [-1,1,1]
+
+        movelist[17,:] = [1,-1,-1]
+        movelist[18,:] = [1,-1,0]
+        movelist[19,:] = [1,-1,1]
+
+        movelist[20,:] = [1,0,-1]
+        movelist[21,:] = [1,0,0]
+        movelist[22,:] = [1,0,1]
+
+        movelist[23,:] = [1,1,-1]
+        movelist[24,:] = [1,1,0]
+        movelist[25,:] = [1,1,1]
         # 
         # The algorithm:
         #   For each water molecule, consider which grid points are possible by
@@ -224,37 +286,60 @@ cpdef double volume(numpy.ndarray[numpy.float64_t, ndim=2] _solute_pos,
                     close voxel
                     
             '''
-            #                         
-            #                 
-            #                 
-            #             
-            check = True
-            if is_free(x, y, z, solute_pos, solute_rad, nsolute):
-                open_voxel(
+            if is_free(x, y, z, solute_pos, solute_rad, nsolute, solvent_rad):
+                open_voxel(&open_arr, ngridpts, ix, iy, iz)
                 visited_grid[ix,iy,iz] = 1
 
-            if is_free(x, y, Z, solute_pos, solute_rad, nsolute):
+            if is_free(x, y, Z, solute_pos, solute_rad, nsolute, solvent_rad):
+                open_voxel(&open_arr, ngridpts, ix, iy, iZ)
                 visited_grid[ix,iy,iZ] = 1
 
-            if is_free(x, Y, z, solute_pos, solute_rad, nsolute):
+            if is_free(x, Y, z, solute_pos, solute_rad, nsolute, solvent_rad):
+                open_voxel(&open_arr, ngridpts, ix, iY, iz)
                 visited_grid[ix,iY,iz] = 1
 
-            if is_free(x, Y, Z, solute_pos, solute_rad, nsolute):
+            if is_free(x, Y, Z, solute_pos, solute_rad, nsolute, solvent_rad):
+                open_voxel(&open_arr, ngridpts, ix, iY, iZ)
                 visited_grid[ix,iY,iZ] = 1
 
-            if is_free(X, y, z, solute_pos, solute_rad, nsolute):
+            if is_free(X, y, z, solute_pos, solute_rad, nsolute, solvent_rad):
+                open_voxel(&open_arr, ngridpts, iX, iy, iz)
                 visited_grid[iX,iy,iz] = 1
 
-            if is_free(X, y, Z, solute_pos, solute_rad, nsolute):
+            if is_free(X, y, Z, solute_pos, solute_rad, nsolute, solvent_rad):
+                open_voxel(&open_arr, ngridpts, iX, iy, iZ)
                 visited_grid[iX,iy,iZ] = 1
 
-            if is_free(X, Y, z, solute_pos, solute_rad, nsolute):
+            if is_free(X, Y, z, solute_pos, solute_rad, nsolute, solvent_rad):
+                open_voxel(&open_arr, ngridpts, iX, iY, iz)
                 visited_grid[iX,iY,iz] = 1
 
-            if is_free(X, Y, Z, solute_pos, solute_rad, nsolute):
+            if is_free(X, Y, Z, solute_pos, solute_rad, nsolute, solvent_rad):
+                open_voxel(&open_arr, ngridpts, iX, iY, iZ)
                 visited_grid[iX,iY,iZ] = 1
 
-cdef open(voxel)
+            # now we use ix, iy, and iz for general indexing of the grids
+            # find_open returns false when nothing is open
+            # it also sticks in new values for ix, iy, and iz, so that they 
+            # correspond to open voxels
+            while find_open(&open_arr, &ix, &iy, &iz, ngridpts):
+
+                x = voxel_len*ix
+                y = voxel_len*iy
+                z = voxel_len*iz
+
+                if is_free(x, y, z, solute_pos, solute_rad, nsolute, solvent_rad):
+                    grid[ix, iy, iz] = True
+                    # iterate over adjacent voxels
+                    for imove in range(26):
+                        iX = movelist[imove][0] + ix
+                        iY = movelist[imove][1] + iy
+                        iZ = movelist[imove][2] + iz
+                        if not visited_grid[iX, iY, iZ]:
+                            open_voxel(&open_arr, ngridpts, iX, iY, iZ)
+                            visted_grid[iX, iY, iZ] = True
+                    close_voxel(&open_arr, ngridpts, ix, iy, iz)
+
 
 
 
@@ -329,16 +414,4 @@ cdef void flood(bool[:,:,:] *grid, ix, iy, iz, nx, ny, nz,
 
 
 
-cdef bool find_open(int[:,:] *open_arr, int *ix, int *iy, int *iz, int ngridpts):
-    cdef int i
-    for i in range(ngridpts):
-        if *open_arr[i,0] != -1:
-            *ix = open_arr[i,0]
-            *iy = open_arr[i,1]
-            *iz = open_arr[i,2]
-            open_arr[i,0] = -1
-            open_arr[i,1] = -1
-            open_arr[i,2] = -1
-            return True
-    return False
 
