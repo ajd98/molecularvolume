@@ -88,6 +88,8 @@ cpdef double volume(numpy.ndarray[numpy.float64_t, ndim=2] _solute_pos,
         double solx, soly, solz
         double solvent_floor[:,:]
         double solvent_ceil[:,:]
+        int nsolvent
+        int solute
         bool check
 
 
@@ -133,10 +135,28 @@ cpdef double volume(numpy.ndarray[numpy.float64_t, ndim=2] _solute_pos,
     solvent_pos[:,1] -= ymin
     solvent_pos[:,2] -= zmin
 
-    solvent_floor = numpy.floor(solvent_pos)
-    solvent_ceil = numpy.floor(solvent_pos)
-    nsolvent = solvent_pos.shape[0]
-    nsolute = solute_pos.shape[0]
+    # These will be used to find the voxels surrounding each solvent
+    nsolvent = _solvent_pos.shape[0]
+    nsolute = _solute_pos.shape[0]
+
+    # Find the positions of the voxels surround each solvent 
+    with nogil:
+        solvent_floor = numpy.zeros(_solvent_pos)
+        solvent_ceil = numpy.zeros(_solvent_pos)
+        for isolute in range(nsolute):
+            solx = solvent_pos[isolute,0]
+            soly = solvent_pos[isolute,1]
+            solz = solvent_pos[isolute,2]
+
+            solvent_floor[isolute,0] = int(solx/voxel_len)*voxel_len
+            solvent_ceil[isolute,0] = (int(solx/voxel_len)+1)*voxel_len
+
+            solvent_floor[isolute,1] = int(soly/voxel_len)*voxel_len
+            solvent_ceil[isolute,1] = (int(soly/voxel_len)+1)*voxel_len
+
+            solvent_floor[isolute,2] = int(solz/voxel_len)*voxel_len
+            solvent_ceil[isolute,2] = (int(solz/voxel_len)+1)*voxel_len
+
 
     with nogil:
         # 
@@ -234,7 +254,7 @@ cpdef double volume(numpy.ndarray[numpy.float64_t, ndim=2] _solute_pos,
             if is_free(X, Y, Z, solute_pos, solute_rad, nsolute):
                 visited_grid[iX,iY,iZ] = 1
 
-
+cdef open(voxel)
 
 
 
