@@ -23,7 +23,8 @@ cdef extern from "floodfill3d.h":
                    double solvent_rad) nogil
     
 
-cpdef double volume(numpy.ndarray[numpy.float64_t, ndim=2] _solute_pos, 
+#cpdef double volume(numpy.ndarray[numpy.float64_t, ndim=2] _solute_pos, 
+def volume(numpy.ndarray[numpy.float64_t, ndim=2] _solute_pos, 
                     numpy.ndarray[numpy.float64_t, ndim=1] _solute_rad, 
                     numpy.ndarray[numpy.float64_t, ndim=2] _solvent_pos, 
                     double _solvent_rad,
@@ -94,6 +95,17 @@ cpdef double volume(numpy.ndarray[numpy.float64_t, ndim=2] _solute_pos,
     x_max = max(_solute_pos[:,0].max(), _solvent_pos[:,0].max())
     y_max = max(_solute_pos[:,1].max(), _solvent_pos[:,1].max())
     z_max = max(_solute_pos[:,2].max(), _solvent_pos[:,2].max())
+
+    # shift the solute positions by the appropriate amount
+    with nogil:
+        for i in range(nsolute):
+            solute_pos[3*i]   += (-1*x_min + box_buffer)
+            solute_pos[3*i+1] += (-1*y_min + box_buffer)
+            solute_pos[3*i+2] += (-1*z_min + box_buffer)
+        for i in range(nsolvent):
+            solvent_pos[3*i]   += (-1*x_min + box_buffer)
+            solvent_pos[3*i+1] += (-1*y_min + box_buffer)
+            solvent_pos[3*i+2] += (-1*z_min + box_buffer)
     
 
     # the extreme values for the (rectangular) grid
@@ -122,16 +134,6 @@ cpdef double volume(numpy.ndarray[numpy.float64_t, ndim=2] _solute_pos,
             visited_grid[i] = 0
 
 
-    # shift the solute positions by the appropriate amount
-    with nogil:
-        for i in range(nsolute):
-            solute_pos[3*i]   += -1*x_min + box_buffer
-            solute_pos[3*i+1] += -1*y_min + box_buffer
-            solute_pos[3*i+2] += -1*z_min + box_buffer
-        for i in range(nsolvent):
-            solvent_pos[3*i]   += -1*x_min + box_buffer
-            solvent_pos[3*i+1] += -1*y_min + box_buffer
-            solvent_pos[3*i+2] += -1*z_min + box_buffer
 
     # Find the positions of the voxels surround each solvent 
     with nogil:
@@ -295,4 +297,12 @@ cpdef double volume(numpy.ndarray[numpy.float64_t, ndim=2] _solute_pos,
         free(solvent_pos)
         free(solvent_floor)
         free(solvent_ceil)
-        return vol
+
+    #return vol
+    ### for debugging ###
+    _grid = numpy.zeros((int(nx),int(ny),int(nz)))
+    for i in range(nx):
+        for j in range(ny):
+            for k in range(nz):
+                _grid[i,j,k] = grid[i*ny*nz+j*nz+k]
+    return vol, _grid
