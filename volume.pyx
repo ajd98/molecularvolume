@@ -6,6 +6,7 @@ cimport numpy
 import numpy
 from libc.math cimport floor, ceil, sqrt
 from libc.stdlib cimport malloc, free
+from libc.stdio cimport printf
 '''
 Make sure that the solute is whole (rather than split over a periodic boundary)
 before running this.
@@ -248,51 +249,45 @@ cpdef double volume(numpy.ndarray[numpy.float64_t, ndim=2] _solute_pos,
             #  (X,Y,z)
             #  (X,Y,Z)
             # 
-            '''
-            cdef void recurse(int ix, int iy, int iz):
-                if visited_grid[ix, iy, iz]:
-                    return # termination condition
-                else:
-                    visited_grid[ix, iy, iz] = 1
-                    if is_free(ix, iy, iz):
-                        grid[ix, iy, iz] = 1
-                    for i in range(26):
-                        dx = moves[i,0]
-                        dy = moves[i,1]
-                        dz = moves[i,2]
-                        recurse(ix+dx, iy+dy, iz+dz)
-                return 
-            '''
 
+            printf("control")
             if is_free(x, y, z, solute_pos, solute_rad, nsolute, solvent_rad):
+                printf("floodfilling xyz")
                 floodfill(ix, iy, iz, nx, ny, nz, voxel_len, visited_grid, grid, 
                         moves, solute_pos, solute_rad, nsolute, solvent_rad)
 
             if is_free(x, y, Z, solute_pos, solute_rad, nsolute, solvent_rad):
+                printf("floodfilling xyZ")
                 floodfill(ix, iy, iZ, nx, ny, nz, voxel_len, visited_grid, grid, 
                         moves, solute_pos, solute_rad, nsolute, solvent_rad)
 
             if is_free(x, Y, z, solute_pos, solute_rad, nsolute, solvent_rad):
+                printf("floodfilling xYz")
                 floodfill(ix, iY, iz, nx, ny, nz, voxel_len, visited_grid, grid, 
                         moves, solute_pos, solute_rad, nsolute, solvent_rad)
 
             if is_free(x, Y, Z, solute_pos, solute_rad, nsolute, solvent_rad):
+                printf("floodfilling xYZ")
                 floodfill(ix, iY, iZ, nx, ny, nz, voxel_len, visited_grid, grid, 
                         moves, solute_pos, solute_rad, nsolute, solvent_rad)
 
             if is_free(X, y, z, solute_pos, solute_rad, nsolute, solvent_rad):
+                printf("floodfilling Xyz")
                 floodfill(iX, iy, iz, nx, ny, nz, voxel_len, visited_grid, grid, 
                         moves, solute_pos, solute_rad, nsolute, solvent_rad)
 
             if is_free(X, y, Z, solute_pos, solute_rad, nsolute, solvent_rad):
+                printf("floodfilling XyZ")
                 floodfill(iX, iy, iZ, nx, ny, nz, voxel_len, visited_grid, grid, 
                         moves, solute_pos, solute_rad, nsolute, solvent_rad)
 
             if is_free(X, Y, z, solute_pos, solute_rad, nsolute, solvent_rad):
+                printf("floodfilling XYz")
                 floodfill(iX, iY, iz, nx, ny, nz, voxel_len, visited_grid, grid, 
                         moves, solute_pos, solute_rad, nsolute, solvent_rad)
 
             if is_free(X, Y, Z, solute_pos, solute_rad, nsolute, solvent_rad):
+                printf("floodfilling XYZ")
                 floodfill(iX, iY, iZ, nx, ny, nz, voxel_len, visited_grid, grid, 
                         moves, solute_pos, solute_rad, nsolute, solvent_rad)
 
@@ -303,6 +298,7 @@ cpdef double volume(numpy.ndarray[numpy.float64_t, ndim=2] _solute_pos,
                     ptcnt += grid[i*ny*nz+j*nz+k]
 
         vol = (1-float(ptcnt)/float(nx*ny*nz))*(x_max-x_min)*(y_max-y_min)*(z_max-z_min)
+        return float(ptcnt)
         free(grid)
         free(visited_grid)
         free(solute_pos)
@@ -311,4 +307,3 @@ cpdef double volume(numpy.ndarray[numpy.float64_t, ndim=2] _solute_pos,
         free(solvent_floor)
         free(solvent_ceil)
         return vol
-
