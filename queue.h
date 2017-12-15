@@ -15,9 +15,9 @@ struct Queue
     struct Triple* items;
 };
 
-int newQueue(int capacity);
+struct Queue* newQueue(int capacity);
 int isFull(struct Queue* queue);
-int enqueue(struct Triple coords, struct Queue* queue);
-struct Triple dequeue(struct Queue* queue);
+int append(struct Triple coords, struct Queue* queue);
+struct Triple pop(struct Queue* queue);
 
 #endif
