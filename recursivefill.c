@@ -81,9 +81,6 @@ void recurse(int ix, int iy, int iz, int nx, int ny, int nz, double voxel_len,
      * solvent_rad: radius of solvent (which is approximated as a sphere)
      */
     int i;
-    int dx;
-    int dy;
-    int dz;
 
     // check if we are in bounds of the grid
     if ((ix < 0) || (iy < 0) || (iz < 0) || (ix >= nx) || (iy >=ny) || (iz >=nz)){
@@ -100,18 +97,15 @@ void recurse(int ix, int iy, int iz, int nx, int ny, int nz, double voxel_len,
     // specify that ix, iy, iz has been visited
     visited_grid[ix*ny*nz + iy*nz + iz] = 1;
 
-    float x = ix*voxel_len; 
-    float y = iy*voxel_len;
-    float z = iz*voxel_len;
 
-    if (is_free(x, y, z, solute_pos, solute_rad, nsolute, solvent_rad)){
+    if (is_free(ix*voxel_len, iy*voxel_len, iz*voxel_len, solute_pos, solute_rad, nsolute, solvent_rad)){
         // specify that grid index (ix, iy, iz) is accessible to solvent
         grid[ix*ny*nz + iy*nz + iz] = 1;
         for (i=0;i<26;i++) {
-            dx = moves[3*i];
-            dy = moves[3*i + 1];
-            dz = moves[3*i + 2];
-            recurse(ix+dx, iy+dy, iz+dz, nx, ny, nz, voxel_len, visited_grid,
+            recurse(ix+moves[3*i], 
+                    iy+moves[3*i+1], 
+                    iz+moves[3*i+2], 
+                    nx, ny, nz, voxel_len, visited_grid,
                     grid, moves, solute_pos, solute_rad, nsolute, solvent_rad);
         }
     }
