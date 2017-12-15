@@ -12,15 +12,15 @@ before running this.
 '''
 
 cdef extern from "recursivefill.h":
-    double dist(double x1, double y1, double z1, double x2, double y2, double z2)
+    double dist(double x1, double y1, double z1, double x2, double y2, double z2) nogil
     
     unsigned char is_free(double voxx, double voxy, double voxz, double* solute_pos,
-                          double* solute_rad, int nsolute, double solvent_rad)
+                          double* solute_rad, int nsolute, double solvent_rad) nogil
     
     void recurse(int ix, int iy, int iz, int nx, int ny, int nz, double voxel_len,
                  unsigned char* visited_grid, unsigned char* grid, int* moves,
                  double* solute_pos, double* solute_rad, int nsolute, 
-                 double solvent_rad)
+                 double solvent_rad) nogil
     
 
 cpdef double volume(numpy.ndarray[numpy.float64_t, ndim=2] _solute_pos, 
@@ -120,6 +120,10 @@ cpdef double volume(numpy.ndarray[numpy.float64_t, ndim=2] _solute_pos,
     # unsigned char is 8-bit; I use it as a bool 
     cdef unsigned char *grid = <unsigned char *>malloc(nx*ny*nz*sizeof(unsigned char))
     cdef unsigned char *visited_grid = <unsigned char *>malloc(nx*ny*nz*sizeof(unsigned char))
+    with nogil:
+        for i in range(nx*ny*nz):
+            grid[i] = 0
+            visited_grid[i] = 0
 
 
     # shift the solute positions by the appropriate amount
@@ -135,19 +139,19 @@ cpdef double volume(numpy.ndarray[numpy.float64_t, ndim=2] _solute_pos,
 
     # Find the positions of the voxels surround each solvent 
     with nogil:
-        for isolute in range(nsolute):
-            solx = solvent_pos[3*isolute+0]
-            soly = solvent_pos[3*isolute+1]
-            solz = solvent_pos[3*isolute+2]
+        for i in range(nsolute):
+            solx = solvent_pos[3*i+0]
+            soly = solvent_pos[3*i+1]
+            solz = solvent_pos[3*i+2]
 
-            solvent_floor[3*isolute+0] = floor(solx/voxel_len)*voxel_len
-            solvent_ceil[3*isolute+0] = (floor(solx/voxel_len)+1)*voxel_len
+            solvent_floor[3*i+0] = floor(solx/voxel_len)*voxel_len
+            solvent_ceil[3*i+0] = (floor(solx/voxel_len)+1)*voxel_len
 
-            solvent_floor[3*isolute+1] = floor(soly/voxel_len)*voxel_len
-            solvent_ceil[3*isolute+1] = (floor(soly/voxel_len)+1)*voxel_len
+            solvent_floor[3*i+1] = floor(soly/voxel_len)*voxel_len
+            solvent_ceil[3*i+1] = (floor(soly/voxel_len)+1)*voxel_len
 
-            solvent_floor[3*isolute+2] = floor(solz/voxel_len)*voxel_len
-            solvent_ceil[3*isolute+2] = (floor(solz/voxel_len)+1)*voxel_len
+            solvent_floor[3*i+2] = floor(solz/voxel_len)*voxel_len
+            solvent_ceil[3*i+2] = (floor(solz/voxel_len)+1)*voxel_len
 
 
     # possible directions to move; first we make _moves, which is a memoryview
@@ -208,7 +212,7 @@ cpdef double volume(numpy.ndarray[numpy.float64_t, ndim=2] _solute_pos,
         #   ``solute_pos``, with the corresponding radius from ``solute_rad``.
         #   This process is repeated for every water molecule.
         # 
-        for iwater in range(nsolvent):
+        for i in range(nsolvent):
             # The water falls between 8 voxel coordinates
             #
             #
@@ -223,12 +227,12 @@ cpdef double volume(numpy.ndarray[numpy.float64_t, ndim=2] _solute_pos,
             #             \|         \|
             #              * -------- *
             #
-            x = solvent_floor[iwater, 0]
-            X = solvent_ceil[iwater, 0]
-            y = solvent_floor[iwater, 1]
-            Y = solvent_ceil[iwater, 1]
-            z = solvent_floor[iwater, 2]
-            Z = solvent_ceil[iwater, 2]
+            x = solvent_floor[3*i+0]
+            X = solvent_ceil[3*i+0]
+            y = solvent_floor[3*i+1]
+            Y = solvent_ceil[3*i+1]
+            z = solvent_floor[3*i+2]
+            Z = solvent_ceil[3*i+2]
 
             # the index of ``grid`` corresponding to the given voxel
             ix = int(x/voxel_len)
@@ -300,7 +304,8 @@ cpdef double volume(numpy.ndarray[numpy.float64_t, ndim=2] _solute_pos,
         for i in range(nx):
             for j in range(ny):
                 for k in range(nz):
-                    ptcnt += grid[i,j,k]
+                    ptcnt += grid[i*ny*nz+j*nz+k]
+
         vol = (1-float(ptcnt)/float(nx*ny*nz))*(x_max-x_min)*(y_max-y_min)*(z_max-z_min)
         return vol
 
