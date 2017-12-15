@@ -10,7 +10,8 @@ ext_modules=[
     Extension("volume",
         sources=["volume.pyx"],
         libraries=["m", "recursivefill"],
-        library_dirs=[recursivefilldir]
+        library_dirs=[recursivefilldir],
+        extra_compile_args=["-03"]
     )
 ]
 
