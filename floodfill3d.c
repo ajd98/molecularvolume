@@ -5,7 +5,7 @@ double dist(double x1, double y1, double z1, double x2, double y2, double z2) {
     /*
      * Calculate the distance between (x1, y1, z1) and (x2, y2, z2)
      */ 
-    return sqrt(pow(x2-x1, 2) + pow(z2-z1, 2) + pow(z2-z1, 2));
+    return sqrt(pow(x2-x1, 2) + pow(y2-y1, 2) + pow(z2-z1, 2));
 }
 
 
@@ -94,7 +94,7 @@ void floodfill(int ix, int iy, int iz, int nx, int ny, int nz, double voxel_len,
     // The main loop.
     while (!isEmpty(queue)){
         coord = pop(queue);
-        visited_grid[coord.x, coord.y, coord.z] = 1;
+        visited_grid[coord.x*ny*nz + coord.y*nz + coord.z] = 1;
         
         if (is_free(coord.x*voxel_len,
                    coord.y*voxel_len,
@@ -104,18 +104,19 @@ void floodfill(int ix, int iy, int iz, int nx, int ny, int nz, double voxel_len,
                    nsolute,
                    solvent_rad))
         {
-            grid[coord.x, coord.y, coord.z] = 1;
+            grid[coord.x*ny*nz + coord.y*nz + coord.z] = 1;
 
             for (i=0;i<26;i++) {
                 newcoord.x = coord.x+moves[3*i];
                 newcoord.y = coord.y+moves[3*i+1];
                 newcoord.z = coord.z+moves[3*i+2];
-                if ((!visited_grid[newcoord.x, newcoord.y, newcoord.z]) 
+                if ((!visited_grid[newcoord.x*ny*nz + newcoord.y*nz + newcoord.z]) 
                      && (newcoord.x >= 0) && (newcoord.x < nx) 
                      && (newcoord.y >= 0) && (newcoord.y < ny) 
                      && (newcoord.z >= 0) && (newcoord.z < ny))
                 {
                     append(newcoord, queue);
+                } else {
                 }
             }
         }
