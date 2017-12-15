@@ -1,106 +1,30 @@
 #!python
-#cython: boundscheck=False, wraparound=False
+#cython: boundscheck=False, wraparound=False, profile=True, linetrace=True
+#distutils: define_macros=CYTHON_TRACE_NOGIL=1
 cimport cython
 cimport numpy
 import numpy
 from libc.math cimport floor, ceil, sqrt
+from libc.stdlib cimport malloc, free
 '''
 Make sure that the solute is whole (rather than split over a periodic boundary)
 before running this.
 '''
 
-cdef bint is_free(double voxx, double voxy, double voxz,
-        double[:,:] solute_pos, double[:] solute_rad,
-        int nsolute, double solvent_rad) nogil:
-    '''
-    ---------------
-    Parameters
-    ---------------
-    voxx: (double) the x-position of the voxel
-    voxy: (double) the y-position of the voxel
-    voxz: (double) the z-position of the voxel
-    solute_pos: shape (n,3) array of positions of solute atoms
-    solute_rad: shape (n,) array of radii of solute atoms
-    nsolute: (int) The value ``n`` in the above two lines, ie, the number of
-        solute atoms.
-    solvent_rad: (double) the radius of the solvent 
+cdef extern from "floodfill3d.h":
+    double dist(double x1, double y1, double z1, double x2, double y2, double z2) nogil
+    
+    unsigned char is_free(double voxx, double voxy, double voxz, double* solute_pos,
+                          double* solute_rad, int nsolute, double solvent_rad) nogil
+    
+    void floodfill(int ix, int iy, int iz, int nx, int ny, int nz, double voxel_len,
+                   unsigned char* visited_grid, unsigned char* grid, int* moves,
+                   double* solute_pos, double* solute_rad, int nsolute, 
+                   double solvent_rad) nogil
+    
 
-    --------
-    Returns
-    -------
-    True if a sphere of radius ``solvent_rad`` centered at (voxx, voxy, voxz) 
-    does not intersect any sphere of radius solute_rad[i] centered at 
-    solute_pos[i], for any i=1...n
-
-    False otherwise
-    '''
-
-    cdef:
-        bint check = True
-        double solx
-        double soly
-        double solz
-        double solrad
-
-    for isolute in range(nsolute):
-        solx = solute_pos[isolute,0]
-        soly = solute_pos[isolute,1]
-        solz = solute_pos[isolute,2]
-        solrad = solute_rad[isolute]
-        if dist(voxx,voxy,voxz,solx,soly,solz) < solrad + solvent_rad:
-            check = False
-            break
-    return check
-
-
-cdef double dist(double x1, double y1, double z1, 
-                 double x2, double y2, double z2) nogil:
-    '''
-    Calculate the distance between points (x1,y1,z1) and (x2,y2,z2)
-    '''
-    return sqrt((x2-x1)**2+(y2-y1)**2+(z2-z1)**2)
-
-
-cdef bint find_open(int[:,:] open_arr, int* ix, int* iy, int* iz, int ngridpts) nogil:
-    cdef int i
-    for i in range(ngridpts):
-        if open_arr[i,0] != -1:
-            ix[0] = open_arr[i,0]
-            iy[0] = open_arr[i,1]
-            iz[0] = open_arr[i,2]
-            open_arr[i,0] = -1
-            open_arr[i,1] = -1
-            open_arr[i,2] = -1
-            return True
-    return False
-
-
-cdef void open_voxel(int[:,:] open_arr, int arraylen, int ix, int iy, int iz) nogil:
-    '''
-    Open the voxel (ix, iy, iz)
-    '''
-    for i in range(arraylen):
-        if open_arr[i,0] == -1:
-            open_arr[i,0] = ix
-            open_arr[i,1] = iy
-            open_arr[i,2] = iz
-            break
-    return 
-
-cdef void close_voxel(int[:,:] open_arr, int arraylen, int ix, int iy, int iz) nogil:
-    '''
-    close the voxel (ix, iy, iz)
-    '''
-    for i in range(arraylen):
-        if open_arr[i,0] == ix and open_arr[i,1] == iy and open_arr[i,2] == iz:
-            open_arr[i,0] = -1
-            open_arr[i,1] = -1
-            open_arr[i,2] = -1
-            break
-    return 
-
-
-cpdef double volume(numpy.ndarray[numpy.float64_t, ndim=2] _solute_pos, 
+#cpdef double volume(numpy.ndarray[numpy.float64_t, ndim=2] _solute_pos, 
+def volume(numpy.ndarray[numpy.float64_t, ndim=2] _solute_pos, 
                     numpy.ndarray[numpy.float64_t, ndim=1] _solute_rad, 
                     numpy.ndarray[numpy.float64_t, ndim=2] _solvent_pos, 
                     double _solvent_rad,
@@ -122,10 +46,13 @@ cpdef double volume(numpy.ndarray[numpy.float64_t, ndim=2] _solute_pos,
     '''
     cdef:
         # Have Cython convert the arrays with a leading underscore from numpy
-        # arrays to typed memoryvieews
-        double[:,:] solute_pos = _solute_pos
-        double[:] solute_rad = _solute_rad
-        double[:,:] solvent_pos = _solvent_pos
+        # arrays to typed memoryviews
+        double *solute_pos = <double *>malloc(_solute_pos.shape[0]*3*sizeof(double))
+        double *solute_rad = <double *>malloc(_solute_rad.shape[0]*sizeof(double))
+        double *solvent_pos = <double *>malloc(_solvent_pos.shape[0]*3*sizeof(double))
+        double *solvent_floor = <double *>malloc(_solute_pos.shape[0]*3*sizeof(double))
+        double *solvent_ceil = <double *>malloc(_solute_pos.shape[0]*3*sizeof(double))
+
         double box_buffer 
         double x_min, y_min, z_min
         double x_max, y_max, z_max
@@ -133,14 +60,29 @@ cpdef double volume(numpy.ndarray[numpy.float64_t, ndim=2] _solute_pos,
         double x, y, z, X, Y, Z
         int ix, iy, iz, iX, iY, iZ
         double solx, soly, solz
-        double[:,:] solvent_floor = numpy.zeros((_solute_pos.shape[0], solute_pos.shape[1]), dtype=numpy.float64)
-        double[:,:] solvent_ceil = numpy.zeros((_solute_pos.shape[0], solute_pos.shape[1]), dtype=numpy.float64)
-        int nsolvent = _solute_pos.shape[0]
-        int nsolute = _solvent_pos.shape[0]
-        bint check
+        int nsolute = _solute_pos.shape[0]
+        int nsolvent = _solvent_pos.shape[0]
         int i, j, k
         double voxel_len = _voxel_len
         double solvent_rad = _solvent_rad
+
+    # assign solute_pos, solute_rad, and solvent_pos
+    with nogil:
+        for i in range(nsolute):
+            solute_pos[3*i]   = _solute_pos[i,0]
+            solute_pos[3*i+1] = _solute_pos[i,1]
+            solute_pos[3*i+2] = _solute_pos[i,2]
+            solute_rad[i] = _solute_rad[i]
+        for i in range(nsolvent):
+            solvent_pos[3*i]   = _solvent_pos[i,0]
+            solvent_pos[3*i+1] = _solvent_pos[i,1]
+            solvent_pos[3*i+2] = _solvent_pos[i,2]
+            solvent_floor[3*i]   = 0
+            solvent_floor[3*i+1] = 0
+            solvent_floor[3*i+2] = 0
+            solvent_ceil[3*i]   = 0
+            solvent_ceil[3*i+1] = 0
+            solvent_ceil[3*i+2] = 0
 
 
     # We want the grids to be large enough that solvent can completely surround
@@ -153,6 +95,17 @@ cpdef double volume(numpy.ndarray[numpy.float64_t, ndim=2] _solute_pos,
     x_max = max(_solute_pos[:,0].max(), _solvent_pos[:,0].max())
     y_max = max(_solute_pos[:,1].max(), _solvent_pos[:,1].max())
     z_max = max(_solute_pos[:,2].max(), _solvent_pos[:,2].max())
+
+    # shift the solute positions by the appropriate amount
+    with nogil:
+        for i in range(nsolute):
+            solute_pos[3*i]   += (-1*x_min + box_buffer)
+            solute_pos[3*i+1] += (-1*y_min + box_buffer)
+            solute_pos[3*i+2] += (-1*z_min + box_buffer)
+        for i in range(nsolvent):
+            solvent_pos[3*i]   += (-1*x_min + box_buffer)
+            solvent_pos[3*i+1] += (-1*y_min + box_buffer)
+            solvent_pos[3*i+2] += (-1*z_min + box_buffer)
     
 
     # the extreme values for the (rectangular) grid
@@ -169,88 +122,79 @@ cpdef double volume(numpy.ndarray[numpy.float64_t, ndim=2] _solute_pos,
     #        1    2    3    4    5    6    7 
     # 
     nx = numpy.ceil((x_max - x_min)/voxel_len) + 1
-    ny = numpy.ceil((x_max - x_min)/voxel_len) + 1
-    nz = numpy.ceil((x_max - x_min)/voxel_len) + 1
+    ny = numpy.ceil((y_max - y_min)/voxel_len) + 1
+    nz = numpy.ceil((z_max - z_min)/voxel_len) + 1
 
-    # char is 8-bit signed integer
-    cdef unsigned char[:,:,:] grid = numpy.zeros((nx, ny, nz), dtype=numpy.uint8)
-    cdef unsigned char[:,:,:] visited_grid = numpy.zeros((nx, ny, nz), dtype=numpy.uint8)
-    # initialize grid to 0
-
-    cdef int ngridpts = nx*ny*nz
-    cdef int[:,:] open_arr = numpy.ones((ngridpts,3), dtype=numpy.int32)
-
+    # unsigned char is 8-bit; I use it as a bool 
+    cdef unsigned char *grid = <unsigned char *>malloc(nx*ny*nz*sizeof(unsigned char))
+    cdef unsigned char *visited_grid = <unsigned char *>malloc(nx*ny*nz*sizeof(unsigned char))
     with nogil:
-        for i in range(ngridpts):
-            for j in range(3):
-                open_arr[i,j] = -1 
+        for i in range(nx*ny*nz):
+            grid[i] = 0
+            visited_grid[i] = 0
 
-    # shift the solute positions by the appropriate amount
-    with nogil:
-        for i in range(nsolute):
-            solute_pos[i,0] -= x_min
-            solute_pos[i,1] -= y_min
-            solute_pos[i,2] -= z_min
-        for i in range(nsolvent):
-            solvent_pos[i,0] -= x_min
-            solvent_pos[i,1] -= y_min
-            solvent_pos[i,2] -= z_min
 
-    # These will be used to find the voxels surrounding each solvent
-    nsolvent = _solvent_pos.shape[0]
-    nsolute = _solute_pos.shape[0]
 
     # Find the positions of the voxels surround each solvent 
     with nogil:
-        for isolute in range(nsolute):
-            solx = solvent_pos[isolute,0]
-            soly = solvent_pos[isolute,1]
-            solz = solvent_pos[isolute,2]
+        for i in range(nsolute):
+            solx = solvent_pos[3*i+0]
+            soly = solvent_pos[3*i+1]
+            solz = solvent_pos[3*i+2]
 
-            solvent_floor[isolute,0] = floor(solx/voxel_len)*voxel_len
-            solvent_ceil[isolute,0] = (floor(solx/voxel_len)+1)*voxel_len
+            solvent_floor[3*i+0] = floor(solx/voxel_len)*voxel_len
+            solvent_ceil[3*i+0] = ceil(solx/voxel_len)*voxel_len
 
-            solvent_floor[isolute,1] = floor(soly/voxel_len)*voxel_len
-            solvent_ceil[isolute,1] = (floor(soly/voxel_len)+1)*voxel_len
+            solvent_floor[3*i+1] = floor(soly/voxel_len)*voxel_len
+            solvent_ceil[3*i+1] = ceil(soly/voxel_len)*voxel_len
 
-            solvent_floor[isolute,2] = floor(solz/voxel_len)*voxel_len
-            solvent_ceil[isolute,2] = (floor(solz/voxel_len)+1)*voxel_len
+            solvent_floor[3*i+2] = floor(solz/voxel_len)*voxel_len
+            solvent_ceil[3*i+2] = ceil(solz/voxel_len)*voxel_len
 
 
-    cdef int[:,:] movelist = numpy.array([[0,0,-1],
-                                          [0,0,1],
-                                                     
-                                          [0,-1,-1],
-                                          [0,-1,0],
-                                          [0,-1,1],
-                                                     
-                                          [0,1,-1],
-                                          [0,1,0],
-                                          [0,1,1],
-                                                     
-                                          [-1,-1,-1],
-                                          [-1,-1,0],
-                                          [-1,-1,1],
-                                                     
-                                          [-1,0,-1],
-                                          [-1,0,0],
-                                          [-1,0,1],
-                                                     
-                                          [-1,1,-1],
-                                          [-1,1,0],
-                                          [-1,1,1],
-                                                     
-                                          [1,-1,-1],
-                                          [1,-1,0],
-                                          [1,-1,1],
-                                                     
-                                          [1,0,-1],
-                                          [1,0,0],
-                                          [1,0,1],
-                                                     
-                                          [1,1,-1],
-                                          [1,1,0],
-                                          [1,1,1]], dtype=numpy.int32)
+    # possible directions to move; first we make _moves, which is a memoryview
+    # then we convert the memoryview to a true C-style array
+    cdef int[:,:] _moves = numpy.array([[0,0,-1],
+                                        [0,0,1],
+                                                   
+                                        [0,-1,-1],
+                                        [0,-1,0],
+                                        [0,-1,1],
+                                                   
+                                        [0,1,-1],
+                                        [0,1,0],
+                                        [0,1,1],
+                                                   
+                                        [-1,-1,-1],
+                                        [-1,-1,0],
+                                        [-1,-1,1],
+                                                   
+                                        [-1,0,-1],
+                                        [-1,0,0],
+                                        [-1,0,1],
+                                                   
+                                        [-1,1,-1],
+                                        [-1,1,0],
+                                        [-1,1,1],
+                                                   
+                                        [1,-1,-1],
+                                        [1,-1,0],
+                                        [1,-1,1],
+                                                   
+                                        [1,0,-1],
+                                        [1,0,0],
+                                        [1,0,1],
+                                                   
+                                        [1,1,-1],
+                                        [1,1,0],
+                                        [1,1,1]], dtype=numpy.int32)
+    # Start making the true c-style array
+    cdef int *moves = <int *>malloc(3*26*sizeof(int))
+    with nogil:
+        for i in range(26):
+            moves[3*i+0] = _moves[i,0]
+            moves[3*i+1] = _moves[i,1]
+            moves[3*i+2] = _moves[i,2]
 
     cdef int ptcnt = 0
     cdef double vol
@@ -266,7 +210,7 @@ cpdef double volume(numpy.ndarray[numpy.float64_t, ndim=2] _solute_pos,
         #   ``solute_pos``, with the corresponding radius from ``solute_rad``.
         #   This process is repeated for every water molecule.
         # 
-        for iwater in range(nsolvent):
+        for i in range(nsolvent):
             # The water falls between 8 voxel coordinates
             #
             #
@@ -281,12 +225,12 @@ cpdef double volume(numpy.ndarray[numpy.float64_t, ndim=2] _solute_pos,
             #             \|         \|
             #              * -------- *
             #
-            x = solvent_floor[iwater, 0]
-            X = solvent_ceil[iwater, 0]
-            y = solvent_floor[iwater, 1]
-            Y = solvent_ceil[iwater, 1]
-            z = solvent_floor[iwater, 2]
-            Z = solvent_ceil[iwater, 2]
+            x = solvent_floor[3*i+0]
+            X = solvent_ceil[3*i+0]
+            y = solvent_floor[3*i+1]
+            Y = solvent_ceil[3*i+1]
+            z = solvent_floor[3*i+2]
+            Z = solvent_ceil[3*i+2]
 
             # the index of ``grid`` corresponding to the given voxel
             ix = int(x/voxel_len)
@@ -306,81 +250,59 @@ cpdef double volume(numpy.ndarray[numpy.float64_t, ndim=2] _solute_pos,
             #  (X,Y,z)
             #  (X,Y,Z)
             # 
-            '''
-            open voxels surrounding water
-            assign ``visited_grid`` to one for each of the open voxels
 
-            while there are open voxels:
-                for each open voxel:
-                    if voxel is free:
-                        assign corresponding value in ``grid`` to one
-                        for each adjacent voxel:
-                            if adjacent voxel is not visited:
-                                open voxel
-                                assign corresponding value in ``visited_grid`` to one 
-                    close voxel
-                    
-            '''
             if is_free(x, y, z, solute_pos, solute_rad, nsolute, solvent_rad):
-                open_voxel(open_arr, ngridpts, ix, iy, iz)
-                visited_grid[ix,iy,iz] = 1
+                floodfill(ix, iy, iz, nx, ny, nz, voxel_len, visited_grid, grid, 
+                        moves, solute_pos, solute_rad, nsolute, solvent_rad)
 
             if is_free(x, y, Z, solute_pos, solute_rad, nsolute, solvent_rad):
-                open_voxel(open_arr, ngridpts, ix, iy, iZ)
-                visited_grid[ix,iy,iZ] = 1
+                floodfill(ix, iy, iZ, nx, ny, nz, voxel_len, visited_grid, grid, 
+                        moves, solute_pos, solute_rad, nsolute, solvent_rad)
 
             if is_free(x, Y, z, solute_pos, solute_rad, nsolute, solvent_rad):
-                open_voxel(open_arr, ngridpts, ix, iY, iz)
-                visited_grid[ix,iY,iz] = 1
+                floodfill(ix, iY, iz, nx, ny, nz, voxel_len, visited_grid, grid, 
+                        moves, solute_pos, solute_rad, nsolute, solvent_rad)
 
             if is_free(x, Y, Z, solute_pos, solute_rad, nsolute, solvent_rad):
-                open_voxel(open_arr, ngridpts, ix, iY, iZ)
-                visited_grid[ix,iY,iZ] = 1
+                floodfill(ix, iY, iZ, nx, ny, nz, voxel_len, visited_grid, grid, 
+                        moves, solute_pos, solute_rad, nsolute, solvent_rad)
 
             if is_free(X, y, z, solute_pos, solute_rad, nsolute, solvent_rad):
-                open_voxel(open_arr, ngridpts, iX, iy, iz)
-                visited_grid[iX,iy,iz] = 1
+                floodfill(iX, iy, iz, nx, ny, nz, voxel_len, visited_grid, grid, 
+                        moves, solute_pos, solute_rad, nsolute, solvent_rad)
 
             if is_free(X, y, Z, solute_pos, solute_rad, nsolute, solvent_rad):
-                open_voxel(open_arr, ngridpts, iX, iy, iZ)
-                visited_grid[iX,iy,iZ] = 1
+                floodfill(iX, iy, iZ, nx, ny, nz, voxel_len, visited_grid, grid, 
+                        moves, solute_pos, solute_rad, nsolute, solvent_rad)
 
             if is_free(X, Y, z, solute_pos, solute_rad, nsolute, solvent_rad):
-                open_voxel(open_arr, ngridpts, iX, iY, iz)
-                visited_grid[iX,iY,iz] = 1
+                floodfill(iX, iY, iz, nx, ny, nz, voxel_len, visited_grid, grid, 
+                        moves, solute_pos, solute_rad, nsolute, solvent_rad)
 
             if is_free(X, Y, Z, solute_pos, solute_rad, nsolute, solvent_rad):
-                open_voxel(open_arr, ngridpts, iX, iY, iZ)
-                visited_grid[iX,iY,iZ] = 1
+                floodfill(iX, iY, iZ, nx, ny, nz, voxel_len, visited_grid, grid, 
+                        moves, solute_pos, solute_rad, nsolute, solvent_rad)
 
-            # now we use ix, iy, and iz for general indexing of the grids
-            # find_open returns false when nothing is open
-            # it also sticks in new values for ix, iy, and iz, so that they 
-            # correspond to open voxels
-            while find_open(open_arr, &ix, &iy, &iz, ngridpts):
-
-                x = voxel_len*ix
-                y = voxel_len*iy
-                z = voxel_len*iz
-
-                if is_free(x, y, z, solute_pos, solute_rad, nsolute, solvent_rad):
-                    grid[ix, iy, iz] = True
-                    # iterate over adjacent voxels
-                    for imove in range(26):
-                        iX = movelist[imove][0] + ix
-                        iY = movelist[imove][1] + iy
-                        iZ = movelist[imove][2] + iz
-                        # Check if the move is outside the grid
-                        if iX >= 0 and iY >= 0 and iZ >= 0 and iX < nx and iY < ny and iZ < nz:
-                            if not visited_grid[iX, iY, iZ]:
-                                open_voxel(open_arr, ngridpts, iX, iY, iZ)
-                                visited_grid[iX, iY, iZ] = True
-                close_voxel(open_arr, ngridpts, ix, iy, iz)
         #find the volume
         for i in range(nx):
             for j in range(ny):
                 for k in range(nz):
-                    ptcnt += grid[i,j,k]
-        vol = float(ptcnt)/float(nx*ny*nz)*(x_max-x_min)*(y_max-y_min)*(z_max-z_min)
-        return vol
+                    ptcnt += grid[i*ny*nz+j*nz+k]
 
+        vol = (1-float(ptcnt)/float(nx*ny*nz))*(x_max-x_min)*(y_max-y_min)*(z_max-z_min)
+
+    #return vol
+    ### for debugging ###
+    _grid = numpy.zeros((int(nx),int(ny),int(nz)))
+    for i in range(nx):
+        for j in range(ny):
+            for k in range(nz):
+                _grid[i,j,k] = grid[i*ny*nz+j*nz+k]
+    free(grid)
+    free(visited_grid)
+    free(solute_pos)
+    free(solute_rad)
+    free(solvent_pos)
+    free(solvent_floor)
+    free(solvent_ceil)
+    return vol, _grid
