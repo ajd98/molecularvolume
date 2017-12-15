@@ -10,7 +10,7 @@ def main():
     solvent_pos = numpy.array(((0,5,0),), dtype=numpy.float64)
 
     solvent_rad = 1.4
-    voxel_len = 1.0
+    voxel_len = 0.1
     vol = volume.volume(solute_pos, solute_rad, solvent_pos, solvent_rad, voxel_len)
     print(vol)
 
