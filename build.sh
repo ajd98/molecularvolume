@@ -1,5 +1,5 @@
 #!/bin/sh
-rm *.so
+rm *.o *.a *.so
 export LIBRARY_PATH=$(pwd):${LIBRARY_PATH}
 
 gcc -O3 -c floodfill3d.c -lm -o floodfill3d.o
