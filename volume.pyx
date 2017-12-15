@@ -5,114 +5,23 @@ cimport cython
 cimport numpy
 import numpy
 from libc.math cimport floor, ceil, sqrt
+from libc.stdlib cimport malloc, free
 '''
 Make sure that the solute is whole (rather than split over a periodic boundary)
 before running this.
 '''
 
-cdef bint is_free(double voxx, double voxy, double voxz,
-        double[:,:] solute_pos, double[:] solute_rad,
-        int nsolute, double solvent_rad) nogil:
-    '''
-    ---------------
-    Parameters
-    ---------------
-    voxx: (double) the x-position of the voxel
-    voxy: (double) the y-position of the voxel
-    voxz: (double) the z-position of the voxel
-    solute_pos: shape (n,3) array of positions of solute atoms
-    solute_rad: shape (n,) array of radii of solute atoms
-    nsolute: (int) The value ``n`` in the above two lines, ie, the number of
-        solute atoms.
-    solvent_rad: (double) the radius of the solvent 
-
-    --------
-    Returns
-    -------
-    True if a sphere of radius ``solvent_rad`` centered at (voxx, voxy, voxz) 
-    does not intersect any sphere of radius solute_rad[i] centered at 
-    solute_pos[i], for any i=1...n
-
-    False otherwise
-    '''
-
-    cdef:
-        bint check = True
-        double solx
-        double soly
-        double solz
-        double solrad
-
-    for isolute in range(nsolute):
-        solx = solute_pos[isolute,0]
-        soly = solute_pos[isolute,1]
-        solz = solute_pos[isolute,2]
-        solrad = solute_rad[isolute]
-        if dist(voxx,voxy,voxz,solx,soly,solz) < solrad + solvent_rad:
-            check = False
-            break
-    return check
-
-
-cdef double dist(double x1, double y1, double z1, 
-                 double x2, double y2, double z2) nogil:
-    '''
-    Calculate the distance between points (x1,y1,z1) and (x2,y2,z2)
-    '''
-    return sqrt((x2-x1)**2+(y2-y1)**2+(z2-z1)**2)
-
-
-cdef void recurse(int ix, int iy, int iz, int nx, int ny, int nz, double voxel_len,
-        unsigned char[:,:,:] visited_grid, unsigned char[:,:,:] grid, int[:,:] moves, 
-        double[:,:] solute_pos, double[:] solute_rad, int nsolute,
-        double solvent_rad) nogil:
-    '''
-    ----------
-    Parameters
-    ----------
-    ix: x index of current grid position
-    iy: y index of current grid position
-    iz: z index of current grid position
-    nx: length of grid along x-axis, in voxels
-    ny: length of grid along y-axis, in voxels
-    nz: length of grid along z-axis, in voxels
-    voxel_len: edge length of (cubic) voxel
-    visited_grid: shape (nx, ny, nz) array; 1 if visited, 0 otherwise
-    grid: shape (nx, ny, nz) array; 1 if accessible by moves on solvent; 
-        0 otherwise
-    moves: shape (26,3) array; possible moves
-    solute_pos: shape (nsolute, 3) array; (x,y,z) coordinates of each solute
-        atom
-    solute_rad: shape (nsolute,) array; radius of each solute atom
-    nsolute: number of solute atoms
-    solvent_rad: radius of solvent (which is approximated as a sphere)
-    '''
-    cdef int i, dx, dy, dz
-
-    # check that we are within the bounds of the grid
-    if ix < 0 or iy < 0 or iz < 0 or ix >= nx or iy >= ny or iz >= nz:
-        return
-    # check whether this grid point has been visited
-    if visited_grid[ix,iy,iz]:
-        return
-    else:
-        visited_grid[ix,iy,iz] = 1
-        x = ix*voxel_len
-        y = iy*voxel_len
-        z = iz*voxel_len
-        if is_free(x, y, z, solute_pos, solute_rad, nsolute, solvent_rad):
-            grid[ix,iy,iz] = 1
-
-            # iterate through moves
-            for i in range(26):
-                dx = moves[i,0]
-                dy = moves[i,1]
-                dz = moves[i,2]
-                recurse(ix+dx, iy+dy, iz+dz, nx, ny, nz, voxel_len, visited_grid,
-                        grid, moves, solute_pos, solute_rad, nsolute, 
-                        solvent_rad)
-        return
-
+cdef extern from "recursivefill.h":
+    double dist(double x1, double y1, double z1, double x2, double y2, double z2)
+    
+    unsigned char is_free(double voxx, double voxy, double voxz, double* solute_pos,
+                          double* solute_rad, int nsolute, double solvent_rad)
+    
+    void recurse(int ix, int iy, int iz, int nx, int ny, int nz, double voxel_len,
+                 unsigned char* visited_grid, unsigned char* grid, int* moves,
+                 double* solute_pos, double* solute_rad, int nsolute, 
+                 double solvent_rad)
+    
 
 cpdef double volume(numpy.ndarray[numpy.float64_t, ndim=2] _solute_pos, 
                     numpy.ndarray[numpy.float64_t, ndim=1] _solute_rad, 
@@ -136,10 +45,13 @@ cpdef double volume(numpy.ndarray[numpy.float64_t, ndim=2] _solute_pos,
     '''
     cdef:
         # Have Cython convert the arrays with a leading underscore from numpy
-        # arrays to typed memoryvieews
-        double[:,:] solute_pos = _solute_pos
-        double[:] solute_rad = _solute_rad
-        double[:,:] solvent_pos = _solvent_pos
+        # arrays to typed memoryviews
+        double *solute_pos = <double *>malloc(_solute_pos.shape[0]*3*sizeof(double))
+        double *solute_rad = <double *>malloc(_solute_rad.shape[0]*sizeof(double))
+        double *solvent_pos = <double *>malloc(_solvent_pos.shape[0]*3*sizeof(double))
+
+
+
         double box_buffer 
         double x_min, y_min, z_min
         double x_max, y_max, z_max
@@ -147,13 +59,33 @@ cpdef double volume(numpy.ndarray[numpy.float64_t, ndim=2] _solute_pos,
         double x, y, z, X, Y, Z
         int ix, iy, iz, iX, iY, iZ
         double solx, soly, solz
-        double[:,:] solvent_floor = numpy.zeros((_solute_pos.shape[0], solute_pos.shape[1]), dtype=numpy.float64)
-        double[:,:] solvent_ceil = numpy.zeros((_solute_pos.shape[0], solute_pos.shape[1]), dtype=numpy.float64)
+
+        double *solvent_floor = <double *>malloc(_solute_pos.shape[0]*3*sizeof(double))
+        double *solvent_ceil = <double *>malloc(_solute_pos.shape[0]*3*sizeof(double))
+
         int nsolvent = _solute_pos.shape[0]
         int nsolute = _solvent_pos.shape[0]
         int i, j, k
         double voxel_len = _voxel_len
         double solvent_rad = _solvent_rad
+
+    # assign solute_pos, solute_rad, and solvent_pos
+    with nogil:
+        for i in range(nsolute):
+            solute_pos[3*i]   = _solute_pos[i,0]
+            solute_pos[3*i+1] = _solute_pos[i,1]
+            solute_pos[3*i+2] = _solute_pos[i,2]
+            solute_rad[i] = _solute_rad[i]
+        for i in range(nsolvent):
+            solvent_pos[3*i]   = _solvent_pos[i,0]
+            solvent_pos[3*i+1] = _solvent_pos[i,1]
+            solvent_pos[3*i+2] = _solvent_pos[i,2]
+            solvent_floor[3*i]   = 0
+            solvent_floor[3*i+1] = 0
+            solvent_floor[3*i+2] = 0
+            solvent_ceil[3*i]   = 0
+            solvent_ceil[3*i+1] = 0
+            solvent_ceil[3*i+2] = 0
 
 
     # We want the grids to be large enough that solvent can completely surround
@@ -185,77 +117,82 @@ cpdef double volume(numpy.ndarray[numpy.float64_t, ndim=2] _solute_pos,
     ny = numpy.ceil((x_max - x_min)/voxel_len) + 1
     nz = numpy.ceil((x_max - x_min)/voxel_len) + 1
 
-    # char is 8-bit signed integer
-    cdef unsigned char[:,:,:] grid = numpy.zeros((nx, ny, nz), dtype=numpy.uint8)
-    cdef unsigned char[:,:,:] visited_grid = numpy.zeros((nx, ny, nz), dtype=numpy.uint8)
+    # unsigned char is 8-bit; I use it as a bool 
+    cdef unsigned char *grid = <unsigned char *>malloc(nx*ny*nz*sizeof(unsigned char))
+    cdef unsigned char *visited_grid = <unsigned char *>malloc(nx*ny*nz*sizeof(unsigned char))
 
 
     # shift the solute positions by the appropriate amount
     with nogil:
         for i in range(nsolute):
-            solute_pos[i,0] -= x_min
-            solute_pos[i,1] -= y_min
-            solute_pos[i,2] -= z_min
+            solute_pos[3*i]   -= x_min
+            solute_pos[3*i+1] -= y_min
+            solute_pos[3*i+2] -= z_min
         for i in range(nsolvent):
-            solvent_pos[i,0] -= x_min
-            solvent_pos[i,1] -= y_min
-            solvent_pos[i,2] -= z_min
-
-    # These will be used to find the voxels surrounding each solvent
-    nsolvent = _solvent_pos.shape[0]
-    nsolute = _solute_pos.shape[0]
+            solvent_pos[3*i]   -= x_min
+            solvent_pos[3*i+1] -= y_min
+            solvent_pos[3*i+2] -= z_min
 
     # Find the positions of the voxels surround each solvent 
     with nogil:
         for isolute in range(nsolute):
-            solx = solvent_pos[isolute,0]
-            soly = solvent_pos[isolute,1]
-            solz = solvent_pos[isolute,2]
+            solx = solvent_pos[3*isolute+0]
+            soly = solvent_pos[3*isolute+1]
+            solz = solvent_pos[3*isolute+2]
 
-            solvent_floor[isolute,0] = floor(solx/voxel_len)*voxel_len
-            solvent_ceil[isolute,0] = (floor(solx/voxel_len)+1)*voxel_len
+            solvent_floor[3*isolute+0] = floor(solx/voxel_len)*voxel_len
+            solvent_ceil[3*isolute+0] = (floor(solx/voxel_len)+1)*voxel_len
 
-            solvent_floor[isolute,1] = floor(soly/voxel_len)*voxel_len
-            solvent_ceil[isolute,1] = (floor(soly/voxel_len)+1)*voxel_len
+            solvent_floor[3*isolute+1] = floor(soly/voxel_len)*voxel_len
+            solvent_ceil[3*isolute+1] = (floor(soly/voxel_len)+1)*voxel_len
 
-            solvent_floor[isolute,2] = floor(solz/voxel_len)*voxel_len
-            solvent_ceil[isolute,2] = (floor(solz/voxel_len)+1)*voxel_len
+            solvent_floor[3*isolute+2] = floor(solz/voxel_len)*voxel_len
+            solvent_ceil[3*isolute+2] = (floor(solz/voxel_len)+1)*voxel_len
 
 
-    cdef int[:,:] moves = numpy.array([[0,0,-1],
-                                       [0,0,1],
-                                                  
-                                       [0,-1,-1],
-                                       [0,-1,0],
-                                       [0,-1,1],
-                                                  
-                                       [0,1,-1],
-                                       [0,1,0],
-                                       [0,1,1],
-                                                  
-                                       [-1,-1,-1],
-                                       [-1,-1,0],
-                                       [-1,-1,1],
-                                                  
-                                       [-1,0,-1],
-                                       [-1,0,0],
-                                       [-1,0,1],
-                                                  
-                                       [-1,1,-1],
-                                       [-1,1,0],
-                                       [-1,1,1],
-                                                  
-                                       [1,-1,-1],
-                                       [1,-1,0],
-                                       [1,-1,1],
-                                                  
-                                       [1,0,-1],
-                                       [1,0,0],
-                                       [1,0,1],
-                                                  
-                                       [1,1,-1],
-                                       [1,1,0],
-                                       [1,1,1]], dtype=numpy.int32)
+    # possible directions to move; first we make _moves, which is a memoryview
+    # then we convert the memoryview to a true C-style array
+    cdef int[:,:] _moves = numpy.array([[0,0,-1],
+                                        [0,0,1],
+                                                   
+                                        [0,-1,-1],
+                                        [0,-1,0],
+                                        [0,-1,1],
+                                                   
+                                        [0,1,-1],
+                                        [0,1,0],
+                                        [0,1,1],
+                                                   
+                                        [-1,-1,-1],
+                                        [-1,-1,0],
+                                        [-1,-1,1],
+                                                   
+                                        [-1,0,-1],
+                                        [-1,0,0],
+                                        [-1,0,1],
+                                                   
+                                        [-1,1,-1],
+                                        [-1,1,0],
+                                        [-1,1,1],
+                                                   
+                                        [1,-1,-1],
+                                        [1,-1,0],
+                                        [1,-1,1],
+                                                   
+                                        [1,0,-1],
+                                        [1,0,0],
+                                        [1,0,1],
+                                                   
+                                        [1,1,-1],
+                                        [1,1,0],
+                                        [1,1,1]], dtype=numpy.int32)
+    # Start making the true c-style array
+    cdef int *moves = <int *>malloc(3*26*sizeof(int))
+    with nogil:
+        for i in range(26):
+            moves[3*i+0] = _moves[i,0]
+            moves[3*i+1] = _moves[i,1]
+            moves[3*i+2] = _moves[i,2]
 
     cdef int ptcnt = 0
     cdef double vol
