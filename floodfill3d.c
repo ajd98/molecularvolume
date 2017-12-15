@@ -90,11 +90,11 @@ void floodfill(int ix, int iy, int iz, int nx, int ny, int nz, double voxel_len,
     coord.y = iy;
     coord.z = iz;
     append(coord, queue);
+    visited_grid[coord.x*ny*nz + coord.y*nz + coord.z] = 1;
 
     // The main loop.
     while (!isEmpty(queue)){
         coord = pop(queue);
-        visited_grid[coord.x*ny*nz + coord.y*nz + coord.z] = 1;
         
         if (is_free(coord.x*voxel_len,
                    coord.y*voxel_len,
@@ -115,9 +115,10 @@ void floodfill(int ix, int iy, int iz, int nx, int ny, int nz, double voxel_len,
                      && (newcoord.y >= 0) && (newcoord.y < ny) 
                      && (newcoord.z >= 0) && (newcoord.z < nz))
                 {
+                    visited_grid[newcoord.x*ny*nz + newcoord.y*nz + newcoord.z] = 1;
                     append(newcoord, queue);
                 } 
             }
-        }
+        }  
     }
 }
