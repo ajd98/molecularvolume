@@ -1,6 +1,5 @@
 #include "queue.h"
 #include <math.h>
-#include <stdio.h>
 
 double dist(double x1, double y1, double z1, double x2, double y2, double z2) {
     /*
@@ -82,7 +81,6 @@ void floodfill(int ix, int iy, int iz, int nx, int ny, int nz, double voxel_len,
      * solvent_rad: radius of solvent (which is approximated as a sphere)
      */
 
-    printf("%d", nsolute);
     // Create a *huge* queue
     struct Queue* queue = newQueue(nx*ny*nz); 
     struct Triple coord;
