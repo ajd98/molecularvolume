@@ -11,16 +11,16 @@ Make sure that the solute is whole (rather than split over a periodic boundary)
 before running this.
 '''
 
-cdef extern from "recursivefill.h":
+cdef extern from "floodfill3d.h":
     double dist(double x1, double y1, double z1, double x2, double y2, double z2) nogil
     
     unsigned char is_free(double voxx, double voxy, double voxz, double* solute_pos,
                           double* solute_rad, int nsolute, double solvent_rad) nogil
     
-    void recurse(int ix, int iy, int iz, int nx, int ny, int nz, double voxel_len,
-                 unsigned char* visited_grid, unsigned char* grid, int* moves,
-                 double* solute_pos, double* solute_rad, int nsolute, 
-                 double solvent_rad) nogil
+    void floodfill(int ix, int iy, int iz, int nx, int ny, int nz, double voxel_len,
+                   unsigned char* visited_grid, unsigned char* grid, int* moves,
+                   double* solute_pos, double* solute_rad, int nsolute, 
+                   double solvent_rad) nogil
     
 
 cpdef double volume(numpy.ndarray[numpy.float64_t, ndim=2] _solute_pos, 

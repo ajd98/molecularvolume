@@ -9,7 +9,7 @@ print(floodfilldir)
 ext_modules=[
     Extension("volume",
         sources=["volume.pyx"],
-        libraries=["m", "fllodfill3d"],
+        libraries=["m", "floodfill3d"],
         library_dirs=[floodfilldir],
         extra_compile_args=["-O3"]
     )

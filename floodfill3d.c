@@ -1,4 +1,5 @@
-#include <queue.h>
+#include "queue.h"
+#include <math.h>
 
 double dist(double x1, double y1, double z1, double x2, double y2, double z2) {
     /*
@@ -81,9 +82,10 @@ void floodfill(int ix, int iy, int iz, int nx, int ny, int nz, double voxel_len,
      */
 
     // Create a *huge* queue
-    struct Queue* queue = createQueue(nx*ny*nz); 
+    struct Queue* queue = newQueue(nx*ny*nz); 
     struct Triple coord;
     struct Triple newcoord;
+    int i;
     coord.x = ix;
     coord.y = iy;
     coord.z = iz;
@@ -94,7 +96,7 @@ void floodfill(int ix, int iy, int iz, int nx, int ny, int nz, double voxel_len,
         coord = pop(queue);
         visited_grid[coord.x, coord.y, coord.z] = 1;
         
-        if (isfree(coord.x*voxel_len,
+        if (is_free(coord.x*voxel_len,
                    coord.y*voxel_len,
                    coord.z*voxel_len,
                    solute_pos,
