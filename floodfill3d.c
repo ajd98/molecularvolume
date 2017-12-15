@@ -110,14 +110,13 @@ void floodfill(int ix, int iy, int iz, int nx, int ny, int nz, double voxel_len,
                 newcoord.x = coord.x+moves[3*i];
                 newcoord.y = coord.y+moves[3*i+1];
                 newcoord.z = coord.z+moves[3*i+2];
-                if ((!visited_grid[newcoord.x*ny*nz + newcoord.y*nz + newcoord.z]) 
+                if ((visited_grid[newcoord.x*ny*nz + newcoord.y*nz + newcoord.z]==0) 
                      && (newcoord.x >= 0) && (newcoord.x < nx) 
                      && (newcoord.y >= 0) && (newcoord.y < ny) 
-                     && (newcoord.z >= 0) && (newcoord.z < ny))
+                     && (newcoord.z >= 0) && (newcoord.z < nz))
                 {
                     append(newcoord, queue);
-                } else {
-                }
+                } 
             }
         }
     }
