@@ -290,13 +290,6 @@ def volume(numpy.ndarray[numpy.float64_t, ndim=2] _solute_pos,
                     ptcnt += grid[i*ny*nz+j*nz+k]
 
         vol = (1-float(ptcnt)/float(nx*ny*nz))*(x_max-x_min)*(y_max-y_min)*(z_max-z_min)
-        free(grid)
-        free(visited_grid)
-        free(solute_pos)
-        free(solute_rad)
-        free(solvent_pos)
-        free(solvent_floor)
-        free(solvent_ceil)
 
     #return vol
     ### for debugging ###
@@ -305,4 +298,11 @@ def volume(numpy.ndarray[numpy.float64_t, ndim=2] _solute_pos,
         for j in range(ny):
             for k in range(nz):
                 _grid[i,j,k] = grid[i*ny*nz+j*nz+k]
+    free(grid)
+    free(visited_grid)
+    free(solute_pos)
+    free(solute_rad)
+    free(solvent_pos)
+    free(solvent_floor)
+    free(solvent_ceil)
     return vol, _grid
