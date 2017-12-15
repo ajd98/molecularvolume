@@ -7,4 +7,4 @@ gcc -O3 -c queue.c -o queue.o
 ar cr libfloodfill3d.a queue.o floodfill3d.o
 
 python setup.py build_ext --inplace
-python test.py
+#python test.py
