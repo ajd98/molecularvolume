@@ -287,7 +287,6 @@ cpdef double volume(numpy.ndarray[numpy.float64_t, ndim=2] _solute_pos,
                 for k in range(nz):
                     ptcnt += grid[i*ny*nz+j*nz+k]
 
-        return float(ptcnt)
         vol = (1-float(ptcnt)/float(nx*ny*nz))*(x_max-x_min)*(y_max-y_min)*(z_max-z_min)
         free(grid)
         free(visited_grid)
