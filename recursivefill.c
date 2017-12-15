@@ -41,10 +41,10 @@ unsigned char is_free(double voxx, double voxy, double voxz, double* solute_pos,
     double solrad;
 
     for (int isolute = 0; isolute < nsolute; isolute++){
-        solx = *(solute_pos + isolute*3);
-        soly = *(solute_pos + isolute*3 + 1);
-        solz = *(solute_pos + isolute*3 + 2);
-        solrad = *(solute_rad + isolute);
+        solx = solute_pos[isolute*3];
+        soly = solute_pos[isolute*3 + 1];
+        solz = solute_pos[isolute*3 + 2];
+        solrad = solute_rad[isolute];
         if (dist(voxx, voxy, voxz, solx, soly, solz) < solrad + solvent_rad) {
             check = 0;
             break;
@@ -91,14 +91,14 @@ void recurse(int ix, int iy, int iz, int nx, int ny, int nz, double voxel_len,
     } 
 
     // check if the grid point is visited
-    if (*(visited_grid + ix*ny*nz + iy*nz + iz) == 1) {
+    if (visited_grid[ix*ny*nz + iy*nz + iz] == 1) {
         return;
     }
 
     // now enter the main part of the program
       
     // specify that ix, iy, iz has been visited
-    *(visited_grid + ix*ny*nz + iy*nz + iz) = 1;
+    visited_grid[ix*ny*nz + iy*nz + iz] = 1;
 
     float x = ix*voxel_len; 
     float y = iy*voxel_len;
@@ -106,11 +106,11 @@ void recurse(int ix, int iy, int iz, int nx, int ny, int nz, double voxel_len,
 
     if (is_free(x, y, z, solute_pos, solute_rad, nsolute, solvent_rad)){
         // specify that grid index (ix, iy, iz) is accessible to solvent
-        *(grid + ix*ny*nz + iy*nz + iz) = 1;
+        grid[ix*ny*nz + iy*nz + iz] = 1;
         for (i=0;i<26;i++) {
-            dx = *(moves + 3*i);
-            dy = *(moves + 3*i + 1);
-            dz = *(moves + 3*i + 2);
+            dx = moves[3*i];
+            dy = moves[3*i + 1];
+            dz = moves[3*i + 2];
             recurse(ix+dx, iy+dy, iz+dz, nx, ny, nz, voxel_len, visited_grid,
                     grid, moves, solute_pos, solute_rad, nsolute, solvent_rad);
         }
