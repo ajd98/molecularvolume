@@ -3,14 +3,14 @@ from distutils.core import setup, Extension
 from Cython.Build import cythonize
 import os
 
-recursivefilldir = os.path.abspath(os.getcwd())
-print(recursivefilldir)
+floodfilldir = os.path.abspath(os.getcwd())
+print(floodfilldir)
 
 ext_modules=[
     Extension("volume",
         sources=["volume.pyx"],
-        libraries=["m", "recursivefill"],
-        library_dirs=[recursivefilldir],
+        libraries=["m", "fllodfill3d"],
+        library_dirs=[floodfilldir],
         extra_compile_args=["-O3"]
     )
 ]
@@ -20,5 +20,5 @@ setup(
     name="volume",
     ext_modules=cythonize(ext_modules),
     include_dirs=[numpy.get_include()],
-    library_dirs=[recursivefilldir]
+    library_dirs=[floodfilldir]
 )
