@@ -1,32 +1,18 @@
 #include "queue.h"
 
-// encapsulate grid indices
-struct Triple
-{
-    int x, y, z;
-};
-
-// fifo data structure
-struct Queue 
-{
-    int front, rear, size;
-    unsigned int capacity;
-    Triple* items;
-}
-
 // Make a new queue with maximum capacity of ``capacity`` Triples
 int newQueue(int capacity)
 {
-    Queue* queue;
+    struct Queue* queue;
     queue->front = 0;
     queue->size = 0;
     queue->rear = 0;
     queue->capacity = capacity;
-    queue->items = (Triple*)malloc(capacity*sizeof(Triple));
+    queue->items = (struct Triple*)malloc(capacity*sizeof(struct Triple));
 }
 
 // Check if the queue is full
-int isFull(Queue* queue)
+int isFull(struct Queue* queue)
 {
     if (queue->capacity == queue->size){
         return 1;
@@ -36,7 +22,7 @@ int isFull(Queue* queue)
 }
 
 // Add a Triple to the queue
-int enqueue(Triple coords, Queue* queue)
+int enqueue(struct Triple coords, struct Queue* queue)
 {
     if isFull(queue){
         return 1; // error; queue is full
@@ -49,7 +35,7 @@ int enqueue(Triple coords, Queue* queue)
     return 0;
 }
 
-int isEmpty(Queue* queue)
+int isEmpty(struct Queue* queue)
 {
     if (queue->size == 0){
         return 1;
@@ -59,12 +45,12 @@ int isEmpty(Queue* queue)
     
 }
 
-Triple dequeue(Queue* queue)
+struct Triple dequeue(struct Queue* queue)
 {
     if isEmpty(queue){
         return NULL; // queue is empty; return a null pointer
     }
-    Triple item = queue->items[queue->front];
+    struct Triple item = queue->items[queue->front];
     queue->front = (queue->front+1)%queue->capacity;
     queue->size -= 1;
     return item;
@@ -72,10 +58,10 @@ Triple dequeue(Queue* queue)
 
 int main()
 {
-    queue = newQueue(10);
-    Triple item1;
-    item1.x = 1
-    item1.y = 1
-    item1.z = 1
-    enqueue(item1, queue)
+    struct Queue queue = newQueue(10);
+    struct Triple item1;
+    item1.x = 1;
+    item1.y = 1;
+    item1.z = 1;
+    enqueue(item1, queue);
 }
