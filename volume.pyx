@@ -265,35 +265,35 @@ cpdef double volume(numpy.ndarray[numpy.float64_t, ndim=2] _solute_pos,
             '''
 
             if is_free(x, y, z, solute_pos, solute_rad, nsolute, solvent_rad):
-                recurse(ix, iy, iz, nx, ny, nz, voxel_len, visited_grid, grid, 
+                floodfill(ix, iy, iz, nx, ny, nz, voxel_len, visited_grid, grid, 
                         moves, solute_pos, solute_rad, nsolute, solvent_rad)
 
             if is_free(x, y, Z, solute_pos, solute_rad, nsolute, solvent_rad):
-                recurse(ix, iy, iZ, nx, ny, nz, voxel_len, visited_grid, grid, 
+                floodfill(ix, iy, iZ, nx, ny, nz, voxel_len, visited_grid, grid, 
                         moves, solute_pos, solute_rad, nsolute, solvent_rad)
 
             if is_free(x, Y, z, solute_pos, solute_rad, nsolute, solvent_rad):
-                recurse(ix, iY, iz, nx, ny, nz, voxel_len, visited_grid, grid, 
+                floodfill(ix, iY, iz, nx, ny, nz, voxel_len, visited_grid, grid, 
                         moves, solute_pos, solute_rad, nsolute, solvent_rad)
 
             if is_free(x, Y, Z, solute_pos, solute_rad, nsolute, solvent_rad):
-                recurse(ix, iY, iZ, nx, ny, nz, voxel_len, visited_grid, grid, 
+                floodfill(ix, iY, iZ, nx, ny, nz, voxel_len, visited_grid, grid, 
                         moves, solute_pos, solute_rad, nsolute, solvent_rad)
 
             if is_free(X, y, z, solute_pos, solute_rad, nsolute, solvent_rad):
-                recurse(iX, iy, iz, nx, ny, nz, voxel_len, visited_grid, grid, 
+                floodfill(iX, iy, iz, nx, ny, nz, voxel_len, visited_grid, grid, 
                         moves, solute_pos, solute_rad, nsolute, solvent_rad)
 
             if is_free(X, y, Z, solute_pos, solute_rad, nsolute, solvent_rad):
-                recurse(iX, iy, iZ, nx, ny, nz, voxel_len, visited_grid, grid, 
+                floodfill(iX, iy, iZ, nx, ny, nz, voxel_len, visited_grid, grid, 
                         moves, solute_pos, solute_rad, nsolute, solvent_rad)
 
             if is_free(X, Y, z, solute_pos, solute_rad, nsolute, solvent_rad):
-                recurse(iX, iY, iz, nx, ny, nz, voxel_len, visited_grid, grid, 
+                floodfill(iX, iY, iz, nx, ny, nz, voxel_len, visited_grid, grid, 
                         moves, solute_pos, solute_rad, nsolute, solvent_rad)
 
             if is_free(X, Y, Z, solute_pos, solute_rad, nsolute, solvent_rad):
-                recurse(iX, iY, iZ, nx, ny, nz, voxel_len, visited_grid, grid, 
+                floodfill(iX, iY, iZ, nx, ny, nz, voxel_len, visited_grid, grid, 
                         moves, solute_pos, solute_rad, nsolute, solvent_rad)
 
         #find the volume
