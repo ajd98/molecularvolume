@@ -30,18 +30,20 @@ def main():
     #pyplot.clf()
 
     solute_pos = numpy.array(((0,0,0),
-                              (12,0,0)), dtype=numpy.float64)
+                              (12,0,0),
+                              (0,-12,0)), dtype=numpy.float64)
 
     solute_rad = numpy.array((3,
-                              3), dtype=numpy.float64)
+                              3,
+                              2), dtype=numpy.float64)
 
     solvent_pos = numpy.array(((0,10,0),), dtype=numpy.float64)
     solvent_rad = 1.4
-    voxel_len = 1
+    voxel_len = 0.5
 
     vol, grid = volume.volume(solute_pos, solute_rad, solvent_pos, solvent_rad, voxel_len)
     print("volume: ", vol)
-    print("actual: ", 2*4./3*numpy.pi*4.4**3)
+    print("actual: ", 2*4./3*numpy.pi*(4.4**3)+4./3*numpy.pi*(3.4**3))
 
     fig = pyplot.figure()
     ax = fig.add_subplot(111, projection='3d')
