@@ -60,8 +60,8 @@ def volume(numpy.ndarray[numpy.float64_t, ndim=2] _solute_pos,
         double x, y, z, X, Y, Z
         int ix, iy, iz, iX, iY, iZ
         double solx, soly, solz
-        int nsolvent = _solute_pos.shape[0]
-        int nsolute = _solvent_pos.shape[0]
+        int nsolute = _solute_pos.shape[0]
+        int nsolvent = _solvent_pos.shape[0]
         int i, j, k
         double voxel_len = _voxel_len
         double solvent_rad = _solvent_rad
