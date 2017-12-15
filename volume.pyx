@@ -49,8 +49,8 @@ cpdef double volume(numpy.ndarray[numpy.float64_t, ndim=2] _solute_pos,
         double *solute_pos = <double *>malloc(_solute_pos.shape[0]*3*sizeof(double))
         double *solute_rad = <double *>malloc(_solute_rad.shape[0]*sizeof(double))
         double *solvent_pos = <double *>malloc(_solvent_pos.shape[0]*3*sizeof(double))
-
-
+        double *solvent_floor = <double *>malloc(_solute_pos.shape[0]*3*sizeof(double))
+        double *solvent_ceil = <double *>malloc(_solute_pos.shape[0]*3*sizeof(double))
 
         double box_buffer 
         double x_min, y_min, z_min
@@ -59,10 +59,6 @@ cpdef double volume(numpy.ndarray[numpy.float64_t, ndim=2] _solute_pos,
         double x, y, z, X, Y, Z
         int ix, iy, iz, iX, iY, iZ
         double solx, soly, solz
-
-        double *solvent_floor = <double *>malloc(_solute_pos.shape[0]*3*sizeof(double))
-        double *solvent_ceil = <double *>malloc(_solute_pos.shape[0]*3*sizeof(double))
-
         int nsolvent = _solute_pos.shape[0]
         int nsolute = _solvent_pos.shape[0]
         int i, j, k
@@ -307,5 +303,12 @@ cpdef double volume(numpy.ndarray[numpy.float64_t, ndim=2] _solute_pos,
                     ptcnt += grid[i*ny*nz+j*nz+k]
 
         vol = (1-float(ptcnt)/float(nx*ny*nz))*(x_max-x_min)*(y_max-y_min)*(z_max-z_min)
+        #free(grid)
+        #free(visited_grid)
+        #free(solute_pos)
+        #free(solute_rad)
+        #free(solvent_pos)
+        #free(solvent_floor)
+        #free(solvent_ceil)
         return vol
 
