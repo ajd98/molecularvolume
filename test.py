@@ -12,10 +12,10 @@ def main():
 
     solvent_rad = 1.4
     voxel_len = 0.5
-    voxel_sizes = [2,1.9,1.8,1.7,1.6,1.5,1.4,1.3,1.2,1.1,1.0,0.9,0.8,0.7,0.6,0.5]
+    voxel_sizes = numpy.arange(0.05,0.15,0.05, dtype=float)
     vols = []
     for voxel_len in voxel_sizes:
-        vols.append(volume.volume(solute_pos, solute_rad, solvent_pos, solvent_rad, voxel_len))
+        vols.append(volume.volume(solute_pos, solute_rad, solvent_pos, solvent_rad, voxel_len)[0])
 
     pyplot.plot(voxel_sizes, vols, color='black')
     actual = sum([numpy.pi*4./3*(solrad+solvent_rad)**3 for solrad in solute_rad])
