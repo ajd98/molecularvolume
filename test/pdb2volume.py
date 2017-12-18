@@ -25,12 +25,11 @@ class PDBVolume(object):
     def __init__(self, pdbpath, radiipath, solventname='WAT', solventrad=1.4, voxel_len=0.5):
         self.solventname = solventname
         self.solventrad = 1.4
-        self.voxel_len = 0.5
+        self.voxel_len = voxel_len
         self.radii = {}
         self.loadradii(radiipath)
         self.pdb = PDBStructure()
         self.pdb.from_file(pdbpath)
-        self.run()
 
     def loadradii(self, radiipath):
         with open(radiipath, 'r') as f:
@@ -72,5 +71,4 @@ class PDBVolume(object):
         solute_rad = numpy.array(solute_rad, dtype=numpy.float64)
         
 
-        vol, grid = volume.volume(solute, solute_rad, solvent, self.solventrad, self.voxel_len)
-        print(vol)
+        return volume.volume(solute, solute_rad, solvent, self.solventrad, self.voxel_len)
