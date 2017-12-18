@@ -45,14 +45,6 @@ def volume(numpy.ndarray[numpy.float64_t, ndim=2] _solute_pos,
     The volume that is accessible to the centers of the water molecules
     '''
     cdef:
-        # Have Cython convert the arrays with a leading underscore from numpy
-        # arrays to typed memoryviews
-        double *solute_pos = <double *>malloc(_solute_pos.shape[0]*3*sizeof(double))
-        double *solute_rad = <double *>malloc(_solute_rad.shape[0]*sizeof(double))
-        double *solvent_pos = <double *>malloc(_solvent_pos.shape[0]*3*sizeof(double))
-        double *solvent_floor = <double *>malloc(_solute_pos.shape[0]*3*sizeof(double))
-        double *solvent_ceil = <double *>malloc(_solute_pos.shape[0]*3*sizeof(double))
-
         double box_buffer 
         double x_min, y_min, z_min
         double x_max, y_max, z_max
@@ -65,6 +57,26 @@ def volume(numpy.ndarray[numpy.float64_t, ndim=2] _solute_pos,
         int i, j, k
         double voxel_len = _voxel_len
         double solvent_rad = _solvent_rad
+
+    # We want the grids to be large enough that solvent can completely surround
+    # the solute; calculate a buffer size to do this.
+    box_buffer = 2*(_solute_rad.max() + solvent_rad)
+    x_min = min(_solute_pos[:,0].min(), _solvent_pos[:,0].min())
+    y_min = min(_solute_pos[:,1].min(), _solvent_pos[:,1].min())
+    z_min = min(_solute_pos[:,2].min(), _solvent_pos[:,2].min())
+
+    x_max = max(_solute_pos[:,0].max(), _solvent_pos[:,0].max())
+    y_max = max(_solute_pos[:,1].max(), _solvent_pos[:,1].max())
+    z_max = max(_solute_pos[:,2].max(), _solvent_pos[:,2].max())
+
+    cdef:
+        # Have Cython convert the arrays with a leading underscore from numpy
+        # arrays to c-style arrays
+        double *solute_pos = <double *>malloc(_solute_pos.shape[0]*3*sizeof(double))
+        double *solute_rad = <double *>malloc(_solute_rad.shape[0]*sizeof(double))
+        double *solvent_pos = <double *>malloc(_solvent_pos.shape[0]*3*sizeof(double))
+        double *solvent_floor = <double *>malloc(_solvent_pos.shape[0]*3*sizeof(double))
+        double *solvent_ceil = <double *>malloc(_solvent_pos.shape[0]*3*sizeof(double))
 
     # assign solute_pos, solute_rad, and solvent_pos
     with nogil:
@@ -85,16 +97,6 @@ def volume(numpy.ndarray[numpy.float64_t, ndim=2] _solute_pos,
             solvent_ceil[3*i+2] = 0
 
 
-    # We want the grids to be large enough that solvent can completely surround
-    # the solute; calculate a buffer size to do this.
-    box_buffer = 2*(_solute_rad.max() + solvent_rad)
-    x_min = min(_solute_pos[:,0].min(), _solvent_pos[:,0].min())
-    y_min = min(_solute_pos[:,1].min(), _solvent_pos[:,1].min())
-    z_min = min(_solute_pos[:,2].min(), _solvent_pos[:,2].min())
-
-    x_max = max(_solute_pos[:,0].max(), _solvent_pos[:,0].max())
-    y_max = max(_solute_pos[:,1].max(), _solvent_pos[:,1].max())
-    z_max = max(_solute_pos[:,2].max(), _solvent_pos[:,2].max())
 
     # shift the solute positions by the appropriate amount
     with nogil:
@@ -134,9 +136,7 @@ def volume(numpy.ndarray[numpy.float64_t, ndim=2] _solute_pos,
             visited_grid[i] = 0
 
 
-
-    # Find the positions of the voxels surround each solvent 
-    with nogil:
+        # Find the positions of the voxels surround each solvent 
         for i in range(nsolute):
             solx = solvent_pos[3*i+0]
             soly = solvent_pos[3*i+1]
