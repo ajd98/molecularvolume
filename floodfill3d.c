@@ -39,13 +39,21 @@ unsigned char is_free(double voxx, double voxy, double voxz, double* solute_pos,
     double soly;
     double solz;
     double solrad;
+    double cut;
 
     for (int isolute = 0; isolute < nsolute; isolute++){
         solx = solute_pos[isolute*3];
         soly = solute_pos[isolute*3 + 1];
         solz = solute_pos[isolute*3 + 2];
         solrad = solute_rad[isolute];
-        if (dist(voxx, voxy, voxz, solx, soly, solz) < solrad + solvent_rad) {
+        cut = solrad + solvent_rad;
+        // the distance beetween (solx, soly, solz) and (voxx, voxy, voxz) is
+        // bounded below by fabs(solx-voxx) etc.  Check these first to avoid 
+        // expensive sqrt calculations.
+        if ((fabs(solx - voxx)>cut) || (fabs(soly - voxy) > cut) || (fabs(solz - voxz) > cut)){
+            continue;
+        }
+        else if (dist(voxx, voxy, voxz, solx, soly, solz) < cut) {
             check = 0;
             break;
         }
