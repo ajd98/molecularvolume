@@ -5,9 +5,9 @@ double dist(double x1, double y1, double z1, double x2, double y2, double z2) {
     /*
      * Calculate the distance between (x1, y1, z1) and (x2, y2, z2)
      */ 
-    int dx = x2-x1;
-    int dy = y2-y1;
-    int dz = z2-z1;
+    double dx = x2-x1;
+    double dy = y2-y1;
+    double dz = z2-z1;
     return sqrt(dx*dx + dy*dy + dz*dz);
 }
 
