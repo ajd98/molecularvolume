@@ -4,9 +4,13 @@ import numpy
 import matplotlib.pyplot as pyplot
 from mpl_toolkits.mplot3d import Axes3D
 
-if __name__ == "__main__":
+import cProfile
+import pstats
+
+
+def test_protein():
     vol, grid = pdb2volume.PDBVolume('villin.pdb', 
-                                     'cavity.lib.autogen', voxel_len=0.2).run()
+                                     'cavity.lib.autogen', voxel_len=0.5).run()
     print(vol)
     fig = pyplot.figure()
     ax = fig.add_subplot(111, projection='3d')
@@ -19,3 +23,15 @@ if __name__ == "__main__":
     ax.set_ylabel('y')
     ax.set_zlabel('z')
     pyplot.show()
+
+def profile_protein():
+    cProfile.runctx("pdb2volume.PDBVolume('villin.pdb', 'cavity.lib.autogen', voxel_len=0.5).run()",
+                    globals(),
+                    locals(),
+                    "Profile.prof")
+    s = pstats.Stats("Profile.prof")
+    s.strip_dirs().sort_stats("time").print_stats()
+
+
+if __name__ == "__main__":
+    test_protein()
