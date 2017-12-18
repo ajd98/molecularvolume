@@ -74,7 +74,3 @@ class PDBVolume(object):
 
         vol, grid = volume.volume(solute, solute_rad, solvent, self.solventrad, self.voxel_len)
         print(vol)
-
-if __name__ == "__main__":
-    PDBVolume('villin.pdb', 
-              'cavity.lib.autogen')
