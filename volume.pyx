@@ -1,4 +1,5 @@
-#!python
+#!/usr/bin/env python
+# encoding: utf-8
 #cython: boundscheck=False, wraparound=False, profile=True, linetrace=True
 #distutils: define_macros=CYTHON_TRACE_NOGIL=1
 cimport cython
