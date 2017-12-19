@@ -17,4 +17,7 @@ volume: $(OBJ)
 	python setup.py build_ext --inplace
 	mv *.so ../
 
-install: $(volume)
+install: volume
+
+uninstall:
+	rm *.so *.a *.o
