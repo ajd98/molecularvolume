@@ -16,6 +16,7 @@ struct Queue
 };
 
 struct Queue* newQueue(int capacity);
+void delQueue(struct Queue* queue);
 int isFull(struct Queue* queue);
 int isEmpty(struct Queue* queue);
 int append(struct Triple coords, struct Queue* queue);
