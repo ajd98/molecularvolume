@@ -156,7 +156,6 @@ class RadiiLibGen(object):
     def print_radii_lib(self):
         outfile = open(self.outpath,'w+')
         lines_to_write = []
-        resiset = set()
         for (reslabel, atomname), vdw_r in self.map.iteritems():
             atomname = atomname.strip()
             if len(atomname) == 1:
@@ -165,18 +164,10 @@ class RadiiLibGen(object):
                 atomname = " {:s} ".format(atomname)
             elif len(atomname) == 3:
                 atomname = " {:s}".format(atomname)
-            lines_to_write.append("SPAT '{:s}*{:s}' {:.03f}\n".format(reslabel, atomname, vdw_r)) 
-            resiset.add(reslabel)
+            lines_to_write.append("{:s} {:s} {:.03f}\n".format(reslabel, atomname, vdw_r)) 
 
-        # Sort the SPAT entries
+        # Sort the entries
         lines_to_write.sort()
-
-        resilist = list(resiset)
-        resilist.sort()
-
-        # Add the RESI entries 
-        for reslabel in resilist:
-            lines_to_write.append("RESI '{:s}'\n".format(reslabel))
 
         # Write the lines to the output file.
         for line in lines_to_write:
