@@ -4,13 +4,14 @@ from Cython.Build import cythonize
 import os
 
 floodfilldir = os.path.abspath(os.getcwd())
-print(floodfilldir)
+include_dir = '../include'
 
 ext_modules=[
     Extension("volume",
         sources=["volume.pyx"],
         libraries=["m", "floodfill3d"],
         library_dirs=[floodfilldir],
+        include_dirs=[include_dir],
         extra_compile_args=["-O3"]
     )
 ]

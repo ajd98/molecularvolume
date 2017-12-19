@@ -14,6 +14,7 @@ OBJ = floodfill3d.o queue.o
 
 volume: $(OBJ)
 	ar cr libfloodfill3d.a $(OBJ)
-	python setup.py
+	python setup.py build_ext --inplace
+	mv *.so ../
 
 install: $(volume)
