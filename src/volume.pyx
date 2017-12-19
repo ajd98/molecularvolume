@@ -306,4 +306,5 @@ def volume(numpy.ndarray[numpy.float64_t, ndim=2] _solute_pos,
     free(solvent_pos)
     free(solvent_floor)
     free(solvent_ceil)
+    free(moves)
     return vol, _grid

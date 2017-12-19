@@ -132,4 +132,5 @@ void floodfill(int ix, int iy, int iz, int nx, int ny, int nz, double voxel_len,
             }
         }  
     }
+    delQueue(queue);
 }

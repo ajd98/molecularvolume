@@ -13,6 +13,13 @@ struct Queue* newQueue(int capacity)
     return queue;
 }
 
+void delQueue(struct Queue* queue)
+{
+    free(queue->items);
+    free(queue);
+    return;
+}
+
 // Check if the queue is full
 int isFull(struct Queue* queue)
 {
