@@ -1,13 +1,14 @@
 #include "floodfill3d.h"
 #include <stdlib.h>
+#include <stdio.h>
 
 int main ()
 {
     int nsolute = 1;
 
-    int nx = 1000;
-    int ny = 1000;
-    int nz = 1000;
+    int nx = 500;
+    int ny = 500;
+    int nz = 500;
     unsigned char *grid = (unsigned char *)malloc(nx*ny*nz*sizeof(unsigned char));
     unsigned char *visited_grid = (unsigned char *)malloc(nx*ny*nz*sizeof(unsigned char));
     int ix = 0;
