@@ -44,7 +44,7 @@ def test_simple_overlap():
     
     analytical_vol = numpy.pi*4./3*(solute_rad[0]+solvent_rad)**3
 
-    print("Test: single atom of radius 3")
+    print("Test: two atoms of radius 3, completely overlapping")
     print("  calculated volume: {:f}".format(vol))
     print("  analytical volume: {:f}".format(analytical_vol))
     perr = 100*abs(vol-analytical_vol)/analytical_vol
@@ -65,7 +65,7 @@ def test_2sphere():
 
     solvent_pos = numpy.array(((11,0,0),), dtype=numpy.float64)
     solvent_rad = 1.4
-    voxel_len = 0.2
+    voxel_len = 0.05
 
     vol = volume.volume(solute_pos, solute_rad, solvent_pos, solvent_rad, 
                               voxel_len)
@@ -77,7 +77,7 @@ def test_2sphere():
                    + numpy.pi*4./3*r**3 \
                    - 2*1./3*numpy.pi*h**2*(3*r-h)
 
-    print("Test: two overlapping atoms of radius 3")
+    print("Test: two partially overlapping atoms of radius 3")
     print("  calculated volume: {:f}".format(vol))
     print("  analytical volume: {:f}".format(analytical_vol))
     perr = 100*abs(vol-analytical_vol)/analytical_vol
@@ -114,4 +114,4 @@ def show_protein_surface():
 if __name__ == "__main__":
     test_simple()
     test_simple_overlap()
-    #test_2sphere()
+    test_2sphere()
