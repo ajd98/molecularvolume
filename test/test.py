@@ -9,7 +9,32 @@ import volume
 
 def test_simple():
     solute_pos = numpy.array(((0,0,0),), dtype=numpy.float64)
-    solute_rad = numpy.array(((3),), dtype=numpy.float64)
+    solute_rad = numpy.array((3,), dtype=numpy.float64)
+    solvent_pos = numpy.array(((8,0,0),), dtype=numpy.float64)
+    solvent_rad = 1.4
+    voxel_len = 0.05
+
+    vol = volume.volume(solute_pos, solute_rad, solvent_pos, solvent_rad, 
+                              voxel_len)
+    
+    analytical_vol = numpy.pi*4./3*(solute_rad[0]+solvent_rad)**3
+
+    print("Test: single atom of radius 3")
+    print("  calculated volume: {:f}".format(vol))
+    print("  analytical volume: {:f}".format(analytical_vol))
+    perr = 100*abs(vol-analytical_vol)/analytical_vol
+    print("  percent error:     {:f}%".format(perr))
+    if perr < 1:
+        print("  TEST PASSED")
+        return 0
+    else:
+        print("  TEST FAILED")
+        return 1
+
+def test_simple_overlap():
+    solute_pos = numpy.array(((0,0,0),
+                              (0,0,0)), dtype=numpy.float64)
+    solute_rad = numpy.array((3,3), dtype=numpy.float64)
     solvent_pos = numpy.array(((8,0,0),), dtype=numpy.float64)
     solvent_rad = 1.4
     voxel_len = 0.05
@@ -40,7 +65,7 @@ def test_2sphere():
 
     solvent_pos = numpy.array(((11,0,0),), dtype=numpy.float64)
     solvent_rad = 1.4
-    voxel_len = 0.5
+    voxel_len = 0.2
 
     vol = volume.volume(solute_pos, solute_rad, solvent_pos, solvent_rad, 
                               voxel_len)
@@ -87,5 +112,6 @@ def show_protein_surface():
     pyplot.show()
 
 if __name__ == "__main__":
-    #test_simple()
-    test_2sphere()
+    test_simple()
+    test_simple_overlap()
+    #test_2sphere()
