@@ -1,7 +1,6 @@
 #!/usr/bin/env python
 # encoding: utf-8
 #cython: boundscheck=False, wraparound=False
-#distutils: define_macros=CYTHON_TRACE_NOGIL=1
 cimport cython
 cimport numpy
 import numpy
@@ -73,11 +72,11 @@ cpdef double volume(numpy.ndarray[numpy.float64_t, ndim=2] _solute_pos,
     cdef:
         # Have Cython convert the arrays with a leading underscore from numpy
         # arrays to c-style arrays
-        double *solute_pos = <double *>malloc(_solute_pos.shape[0]*3*sizeof(double))
-        double *solute_rad = <double *>malloc(_solute_rad.shape[0]*sizeof(double))
-        double *solvent_pos = <double *>malloc(_solvent_pos.shape[0]*3*sizeof(double))
-        double *solvent_floor = <double *>malloc(_solvent_pos.shape[0]*3*sizeof(double))
-        double *solvent_ceil = <double *>malloc(_solvent_pos.shape[0]*3*sizeof(double))
+        double *solute_pos = <double *>malloc(nsolute*3*sizeof(double))
+        double *solute_rad = <double *>malloc(nsolute*sizeof(double))
+        double *solvent_pos = <double *>malloc(nsolvent*3*sizeof(double))
+        double *solvent_floor = <double *>malloc(nsolvent*3*sizeof(double))
+        double *solvent_ceil = <double *>malloc(nsolvent*3*sizeof(double))
 
     # assign solute_pos, solute_rad, and solvent_pos
     with nogil:
@@ -292,6 +291,7 @@ cpdef double volume(numpy.ndarray[numpy.float64_t, ndim=2] _solute_pos,
 
         vol = (1-float(ptcnt)/float(nx*ny*nz))*(x_max-x_min)*(y_max-y_min)*(z_max-z_min)
 
+    print('calculated volume')
     ### for debugging ###
     #_grid = numpy.zeros((int(nx),int(ny),int(nz)))
     #for i in range(nx):
@@ -299,11 +299,20 @@ cpdef double volume(numpy.ndarray[numpy.float64_t, ndim=2] _solute_pos,
     #        for k in range(nz):
     #            _grid[i,j,k] = grid[i*ny*nz+j*nz+k]
     free(grid)
+    print('freed grid')
     free(visited_grid)
+    print('freed visited_grid')
     free(solute_pos)
+    print('freed solute_pos')
     free(solute_rad)
+    print('freed solute_rad')
     free(solvent_pos)
+    print('freed solvent_pos')
     free(solvent_floor)
+    print('freed solvent_floor')
     free(solvent_ceil)
+    print('freed solvent_ceil')
     free(moves)
+    print('freed moves')
+    print('freed all buffers')
     return vol#, _grid
