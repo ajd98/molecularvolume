@@ -137,7 +137,7 @@ cpdef double volume(numpy.ndarray[numpy.float64_t, ndim=2] _solute_pos,
 
 
         # Find the positions of the voxels surround each solvent 
-        for i in range(nsolute):
+        for i in range(nsolvent):
             solx = solvent_pos[3*i+0]
             soly = solvent_pos[3*i+1]
             solz = solvent_pos[3*i+2]
