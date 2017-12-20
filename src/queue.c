@@ -1,8 +1,9 @@
 #include "queue.h"
 #include <stdlib.h>
+#include <stdio.h>
 
 // Make a new queue with maximum capacity of ``capacity`` Triples
-struct Queue* newQueue(int capacity)
+struct Queue* newQueue(unsigned long capacity)
 {
     struct Queue* queue = (struct Queue*)malloc(sizeof(struct Queue));
     queue->front = 0;
@@ -10,6 +11,12 @@ struct Queue* newQueue(int capacity)
     queue->rear = 0;
     queue->capacity = capacity;
     queue->items = (struct Triple*)malloc(capacity*sizeof(struct Triple));
+    // check if pointer is null
+    if (!queue->items){
+        printf("Failed to allocate memory for queue; requested %ld bytes\n", 
+               capacity*sizeof(struct Triple));
+        exit(1);
+    }
     return queue;
 }
 

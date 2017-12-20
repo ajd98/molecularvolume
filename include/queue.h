@@ -10,12 +10,12 @@ struct Triple
 // fifo data structure
 struct Queue 
 {
-    int front, rear, size;
-    unsigned int capacity;
+    unsigned long front, rear, size;
+    unsigned long capacity;
     struct Triple* items;
 };
 
-struct Queue* newQueue(int capacity);
+struct Queue* newQueue(unsigned long capacity);
 void delQueue(struct Queue* queue);
 int isFull(struct Queue* queue);
 int isEmpty(struct Queue* queue);
