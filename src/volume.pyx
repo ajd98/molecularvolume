@@ -24,8 +24,8 @@ cdef extern from "floodfill3d.h":
                    double solvent_rad) nogil
     
 
-#cpdef double volume(numpy.ndarray[numpy.float64_t, ndim=2] _solute_pos, 
-def volume(numpy.ndarray[numpy.float64_t, ndim=2] _solute_pos, 
+#def volume(numpy.ndarray[numpy.float64_t, ndim=2] _solute_pos, 
+cpdef double volume(numpy.ndarray[numpy.float64_t, ndim=2] _solute_pos, 
                     numpy.ndarray[numpy.float64_t, ndim=1] _solute_rad, 
                     numpy.ndarray[numpy.float64_t, ndim=2] _solvent_pos, 
                     double _solvent_rad,
@@ -292,13 +292,12 @@ def volume(numpy.ndarray[numpy.float64_t, ndim=2] _solute_pos,
 
         vol = (1-float(ptcnt)/float(nx*ny*nz))*(x_max-x_min)*(y_max-y_min)*(z_max-z_min)
 
-    #return vol
     ### for debugging ###
-    _grid = numpy.zeros((int(nx),int(ny),int(nz)))
-    for i in range(nx):
-        for j in range(ny):
-            for k in range(nz):
-                _grid[i,j,k] = grid[i*ny*nz+j*nz+k]
+    #_grid = numpy.zeros((int(nx),int(ny),int(nz)))
+    #for i in range(nx):
+    #    for j in range(ny):
+    #        for k in range(nz):
+    #            _grid[i,j,k] = grid[i*ny*nz+j*nz+k]
     free(grid)
     free(visited_grid)
     free(solute_pos)
@@ -307,4 +306,4 @@ def volume(numpy.ndarray[numpy.float64_t, ndim=2] _solute_pos,
     free(solvent_floor)
     free(solvent_ceil)
     free(moves)
-    return vol, _grid
+    return vol#, _grid
