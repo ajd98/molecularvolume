@@ -14,7 +14,7 @@ def test_simple():
     solvent_rad = 1.4
     voxel_len = 0.05
 
-    vol, grid = volume.volume(solute_pos, solute_rad, solvent_pos, solvent_rad, 
+    vol = volume.volume(solute_pos, solute_rad, solvent_pos, solvent_rad, 
                               voxel_len)
     
     analytical_vol = numpy.pi*4./3*(solute_rad[0]+solvent_rad)**3
@@ -40,9 +40,9 @@ def test_2sphere():
 
     solvent_pos = numpy.array(((11,0,0),), dtype=numpy.float64)
     solvent_rad = 1.4
-    voxel_len = 0.1
+    voxel_len = 0.5
 
-    vol, grid = volume.volume(solute_pos, solute_rad, solvent_pos, solvent_rad, 
+    vol = volume.volume(solute_pos, solute_rad, solvent_pos, solvent_rad, 
                               voxel_len)
     
     # volume of sphere 0 + volume of sphere 1 - volume of intersection
@@ -66,7 +66,7 @@ def test_2sphere():
     
 
 def test_protein():
-    vol, grid = pdb2volume.PDBVolume('villin.pdb', 
+    vol = pdb2volume.PDBVolume('villin.pdb', 
                                      'cavity.lib.autogen', voxel_len=0.5).run()
     print(vol)
 
@@ -87,5 +87,5 @@ def show_protein_surface():
     pyplot.show()
 
 if __name__ == "__main__":
-    test_simple()
+    #test_simple()
     test_2sphere()
