@@ -23,10 +23,10 @@ class RadiiLibGen(object):
         '''
         self.parmpath = parmpath
         self.outpath = output
+        self.atomswithnanradii = set()
         self._load()
         self.build_map()
         self.print_radii_lib()
-        self.atomswithnanradii = {}
 
     def _load_atom_name(self):
         arr = []
