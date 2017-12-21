@@ -121,9 +121,18 @@ def test_2sphere_overlapping():
     
 
 def test_protein():
-    vol = pdb2volume.PDBVolume('villin.pdb', 
-                               'radii.lib', voxel_len=0.5).run()
-    print(vol)
+    print("Test: full protein in explicit waters")
+
+    try:
+        vol = pdb2volume.PDBVolume('villin.pdb', 
+                                   'radii.lib', voxel_len=0.5).run()
+        print("  calculated volume: {:f}".format(vol))
+        print("  analytical volume unknown.")
+        print("  TEST PASSED")
+        return 0
+    except:
+        print("  TEST FAILED")
+        return 1
 
 def show_protein_surface():
     vol, grid = pdb2volume.PDBVolume('villin.pdb', 
@@ -142,8 +151,8 @@ def show_protein_surface():
     pyplot.show()
 
 if __name__ == "__main__":
-    #test_simple()
-    #test_simple_overlap()
-    #test_2sphere()
+    test_simple()
+    test_simple_overlap()
+    test_2sphere()
     test_2sphere_overlapping()
     test_protein()
