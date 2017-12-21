@@ -70,4 +70,5 @@ class PDBVolume(object):
         solute_rad = numpy.array(solute_rad, dtype=numpy.float64)
         
 
-        return volume.volume(solute, solute_rad, solvent, self.solventrad, self.voxel_len)
+        return volume.volume_explicit_sol(solute, solute_rad, solvent, 
+                                          self.solventrad, self.voxel_len)
