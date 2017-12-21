@@ -1,5 +1,5 @@
-#ifndef RECURSIVEFILL_H 
-#define RECURSIVEFILL_H
+#ifndef FLOODFILL3D_H 
+#define FLOODFILL3D_H
 
 #include <math.h>
 
