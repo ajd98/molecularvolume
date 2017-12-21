@@ -41,7 +41,7 @@ class PDBVolume(object):
                 atomfield = line[4:8]
 
                 # 9:15
-                radius = float(line[9:15])
+                radius = float(line[8:14])
                 try:
                     self.radii[resfield][atomfield] = radius
                 except KeyError:
