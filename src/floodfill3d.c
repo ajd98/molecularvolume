@@ -99,9 +99,9 @@ void floodfill(int ix, int iy, int iz, int nx, int ny, int nz, double voxel_len,
     struct Triple coord;
     struct Triple newcoord;
     int i;
-    coord.x = ix;
-    coord.y = iy;
-    coord.z = iz;
+    coord.x = (unsigned short int)ix;
+    coord.y = (unsigned short int)iy;
+    coord.z = (unsigned short int)iz;
     if (append(coord, queue)==1){
         exit(1);
     }
