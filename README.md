@@ -6,11 +6,11 @@ via a Python interface.
 
 The volume is defined as the region of space that is not accessible to solvent 
 molecules; more exactly, the volume is calculated as the sum of the volumes of
-those voxels such that a (spherical) solvent molecule of radius `r` positioned
-at the center of the voxel does not intersect any solute atom `i`, which is
-represented as a sphere of radius `s`<sub>i</sub> and position `p`<sub>i</sub>. 
-The solvent radius `r`, and the radius `s`<sub>i</sub> and position 
-`p`<sub>i</sub> of each solute atom is specified by the user. A flood-fill 
+those voxels such that a (spherical) solvent molecule of radius *r* positioned
+at the center of the voxel does not intersect any solute atom *i*, which is
+represented as a sphere of radius *s<sub>i</sub>* and position *p<sub>i</sub>*. 
+The solvent radius *r*, and the radius *s<sub>i</sub>* and position 
+*p<sub>i</sub>* of each solute atom is specified by the user. A flood-fill 
 algorithm (think of the paint bucket in MS Paint, except in three dimensions) 
 is used to determine which voxels are accessible to solvent, such that void 
 space in the interior of the solute is included as part of the volume.
