@@ -4,7 +4,7 @@
 // encapsulate grid indices
 struct Triple
 {
-    int x, y, z;
+    unsigned short int x, y, z;
 };
 
 // fifo data structure
