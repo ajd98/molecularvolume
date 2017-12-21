@@ -34,20 +34,19 @@ class PDBVolume(object):
     def loadradii(self, radiipath):
         with open(radiipath, 'r') as f:
             for line in f:
-                if line.startswith("SPAT"):
-                    # 6:10 (if wildcard is included)
-                    resfield = line[6:9]
+                # 0:3 
+                resfield = line[0:3]
 
-                    # 10:14
-                    atomfield = line[10:14]
+                # 4:7
+                atomfield = line[4:8]
 
-                    # 16:21
-                    radius = float(line[16:21])
-                    try:
-                        self.radii[resfield][atomfield] = radius
-                    except KeyError:
-                        self.radii[resfield] = {}
-                        self.radii[resfield][atomfield] = radius
+                # 9:15
+                radius = float(line[9:15])
+                try:
+                    self.radii[resfield][atomfield] = radius
+                except KeyError:
+                    self.radii[resfield] = {}
+                    self.radii[resfield][atomfield] = radius
 
     def run(self):
         # make numpy arrays for the solvent and solute
