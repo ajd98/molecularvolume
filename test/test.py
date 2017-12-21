@@ -231,7 +231,7 @@ def test_void():
 
     voxel_len = 0.1
 
-    vol_empty, grid_empty = volume.volume(solute_pos, solute_rad, solvent_pos, solvent_rad, 
+    vol_empty = volume.volume(solute_pos, solute_rad, solvent_pos, solvent_rad, 
                               voxel_len)
     print("  Calculated volume with solvent only outside cage: {:f}".format(vol_empty))
 
@@ -240,8 +240,8 @@ def test_void():
                                (3*s,3*s,3*s)), dtype=numpy.float64)
 
 
-    vol_filled, grid_filled = volume.volume(solute_pos, solute_rad, solvent_pos, solvent_rad, 
-                                            voxel_len)
+    vol_filled = volume.volume(solute_pos, solute_rad, solvent_pos, solvent_rad, 
+                               voxel_len)
     print("  Calculated volume with solvent also inside cage:  {:f}".format(vol_filled))
     
     dv_actual = vol_empty - vol_filled
