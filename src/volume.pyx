@@ -23,8 +23,8 @@ cdef extern from "floodfill3d.h":
                    double solvent_rad) nogil
     
 
-#def volume(numpy.ndarray[numpy.float64_t, ndim=2] _solute_pos, 
-cpdef double volume(numpy.ndarray[numpy.float64_t, ndim=2] _solute_pos, 
+cpdef double volume_explicit_sol(
+                    numpy.ndarray[numpy.float64_t, ndim=2] _solute_pos, 
                     numpy.ndarray[numpy.float64_t, ndim=1] _solute_rad, 
                     numpy.ndarray[numpy.float64_t, ndim=2] _solvent_pos, 
                     double _solvent_rad,
@@ -306,3 +306,167 @@ cpdef double volume(numpy.ndarray[numpy.float64_t, ndim=2] _solute_pos,
     free(solvent_ceil)
     free(moves)
     return vol#, _grid
+
+cpdef double volume(numpy.ndarray[numpy.float64_t, ndim=2] _solute_pos, 
+                    numpy.ndarray[numpy.float64_t, ndim=1] _solute_rad, 
+                    double _solvent_rad,
+                    double _voxel_len):
+    '''
+    -----------
+    Parameters
+    -----------
+    _solute_pos: shape (n,3) array of (x,y,z) coordinates of solute atoms
+    _solute_rad: shape (n,) array of solute atom radii
+    _solvent_rad: solvent molecule radius; solvent is approximated as sphere
+    _voxel_len: edge length of voxels
+
+    -------------
+    Returns
+    -------------
+    The volume that is accessible to the centers of a water molecule on the 
+    exterior of the protein.
+    '''
+    cdef:
+        double box_buffer 
+        double x_min, y_min, z_min
+        double x_max, y_max, z_max
+        int nx, ny, nz
+        double x, y, z, X, Y, Z
+        int ix, iy, iz, iX, iY, iZ
+        double solx, soly, solz
+        int nsolute = _solute_pos.shape[0]
+        int i, j, k
+        double voxel_len = _voxel_len
+        double solvent_rad = _solvent_rad
+
+    # We want the grids to be large enough that solvent can completely surround
+    # the solute; calculate a buffer size to do this.
+    box_buffer = 2*(_solute_rad.max() + solvent_rad)
+    x_min = _solute_pos[:,0].min()
+    y_min = _solute_pos[:,1].min()
+    z_min = _solute_pos[:,2].min()
+
+    x_max = _solute_pos[:,0].max()
+    y_max = _solute_pos[:,1].max()
+    z_max = _solute_pos[:,2].max()
+
+    cdef:
+        # Have Cython convert the arrays with a leading underscore from numpy
+        # arrays to c-style arrays
+        double *solute_pos = <double *>malloc(nsolute*3*sizeof(double))
+        double *solute_rad = <double *>malloc(nsolute*sizeof(double))
+
+    # assign solute_pos, solute_rad
+    with nogil:
+        for i in range(nsolute):
+            solute_pos[3*i]   = _solute_pos[i,0]
+            solute_pos[3*i+1] = _solute_pos[i,1]
+            solute_pos[3*i+2] = _solute_pos[i,2]
+            solute_rad[i] = _solute_rad[i]
+
+    # shift the solute positions by the appropriate amount
+    with nogil:
+        for i in range(nsolute):
+            solute_pos[3*i]   += (-1*x_min + box_buffer)
+            solute_pos[3*i+1] += (-1*y_min + box_buffer)
+            solute_pos[3*i+2] += (-1*z_min + box_buffer)
+
+    # the extreme values for the (rectangular) grid
+    x_min -= box_buffer
+    y_min -= box_buffer
+    z_min -= box_buffer
+    x_max += box_buffer
+    y_max += box_buffer
+    z_max += box_buffer
+
+    # Find the number of voxels to use; avoid fencepost error
+    #
+    #        * -- * -- * -- * -- * -- * -- *
+    #        1    2    3    4    5    6    7 
+    # 
+    nx = numpy.ceil((x_max - x_min)/voxel_len) + 1
+    ny = numpy.ceil((y_max - y_min)/voxel_len) + 1
+    nz = numpy.ceil((z_max - z_min)/voxel_len) + 1
+
+    # unsigned char is 8-bit; I use it as a bool 
+    cdef unsigned char *grid = <unsigned char *>malloc(nx*ny*nz*sizeof(unsigned char))
+    cdef unsigned char *visited_grid = <unsigned char *>malloc(nx*ny*nz*sizeof(unsigned char))
+    with nogil:
+        for i in range(nx*ny*nz):
+            grid[i] = 0
+            visited_grid[i] = 0
+
+    # possible directions to move; first we make _moves, which is a memoryview
+    # then we convert the memoryview to a true C-style array
+    cdef int[:,:] _moves = numpy.array([[0,0,-1],
+                                        [0,0,1],
+                                                   
+                                        [0,-1,-1],
+                                        [0,-1,0],
+                                        [0,-1,1],
+                                                   
+                                        [0,1,-1],
+                                        [0,1,0],
+                                        [0,1,1],
+                                                   
+                                        [-1,-1,-1],
+                                        [-1,-1,0],
+                                        [-1,-1,1],
+                                                   
+                                        [-1,0,-1],
+                                        [-1,0,0],
+                                        [-1,0,1],
+                                                   
+                                        [-1,1,-1],
+                                        [-1,1,0],
+                                        [-1,1,1],
+                                                   
+                                        [1,-1,-1],
+                                        [1,-1,0],
+                                        [1,-1,1],
+                                                   
+                                        [1,0,-1],
+                                        [1,0,0],
+                                        [1,0,1],
+                                                   
+                                        [1,1,-1],
+                                        [1,1,0],
+                                        [1,1,1]], dtype=numpy.int32)
+    # Start making the true c-style array
+    cdef int *moves = <int *>malloc(3*26*sizeof(int))
+    with nogil:
+        for i in range(26):
+            moves[3*i+0] = _moves[i,0]
+            moves[3*i+1] = _moves[i,1]
+            moves[3*i+2] = _moves[i,2]
+
+    cdef int ptcnt = 0
+    cdef double vol
+
+    with nogil:
+        # flood-fill from the corner
+        ix = 0
+        iy = 0
+        iz = 0
+        x = 0
+        y = 0
+        z = 0
+
+        if is_free(x, y, z, solute_pos, solute_rad, nsolute, solvent_rad):
+            floodfill(ix, iy, iz, nx, ny, nz, voxel_len, visited_grid, grid, 
+                    moves, solute_pos, solute_rad, nsolute, solvent_rad)
+
+        #find the volume
+        for i in range(nx):
+            for j in range(ny):
+                for k in range(nz):
+                    ptcnt += grid[i*ny*nz+j*nz+k]
+
+        vol = (1-float(ptcnt)/float(nx*ny*nz))*(x_max-x_min)*(y_max-y_min)*(z_max-z_min)
+
+    free(grid)
+    free(visited_grid)
+    free(solute_pos)
+    free(solute_rad)
+    free(moves)
+    return vol
