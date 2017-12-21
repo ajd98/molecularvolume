@@ -174,12 +174,15 @@ def test_void():
                               (0  ,0  ,2*s),
                               (2*s,0  ,2*s),
                               (4*s,0  ,2*s),
+                              (6*s,0  ,2*s),
                               (0  ,2*s,2*s),
                              #(2*s,2*s,2*s), # skip this one, since it's in the middle of the cube
                              #(4*s,2*s,2*s),
+                              (6*s,2*s,2*s),
                               (0  ,4*s,2*s),
                              #(2*s,4*s,2*s),
                              #(4*s,4*s,2*s),
+                              (6*s,4*s,2*s),
                               (0  ,6*s,2*s),
                               (2*s,6*s,2*s),
                               (4*s,6*s,2*s),
@@ -188,12 +191,15 @@ def test_void():
                               (0  ,0  ,4*s),
                               (2*s,0  ,4*s),
                               (4*s,0  ,4*s),
+                              (6*s,0  ,4*s),
                               (0  ,2*s,4*s),
                              #(2*s,2*s,4*s),
                              #(4*s,2*s,4*s),
+                              (6*s,2*s,4*s),
                               (0  ,4*s,4*s),
                              #(2*s,4*s,4*s),
                              #(4*s,4*s,4*s),
+                              (6*s,4*s,4*s),
                               (0  ,6*s,4*s),
                               (2*s,6*s,4*s),
                               (4*s,6*s,4*s),
@@ -202,12 +208,15 @@ def test_void():
                               (0  ,0  ,6*s),
                               (2*s,0  ,6*s),
                               (4*s,0  ,6*s),
+                              (6*s,0  ,6*s),
                               (0  ,2*s,6*s),
                               (2*s,2*s,6*s),
                               (4*s,2*s,6*s),
+                              (6*s,2*s,6*s),
                               (0  ,4*s,6*s),
                               (2*s,4*s,6*s),
                               (4*s,4*s,6*s),
+                              (6*s,4*s,6*s),
                               (0  ,6*s,6*s),
                               (2*s,6*s,6*s),
                               (4*s,6*s,6*s),
@@ -220,28 +229,33 @@ def test_void():
     solvent_pos = numpy.array(((10*s,0,0),), dtype=numpy.float64)
     solvent_rad = s
 
-    voxel_len = 0.05
+    voxel_len = 0.1
 
-    vol_empty = volume.volume(solute_pos, solute_rad, solvent_pos, solvent_rad, 
+    vol_empty, grid_empty = volume.volume(solute_pos, solute_rad, solvent_pos, solvent_rad, 
                               voxel_len)
-
+    print("  Calculated volume with solvent only outside cage: {:f}".format(vol_empty))
 
     # Now include a solvent inside the cube.
     solvent_pos = numpy.array(((10*s,0,0),
                                (3*s,3*s,3*s)), dtype=numpy.float64)
 
-    vol_filled = volume.volume(solute_pos, solute_rad, solvent_pos, solvent_rad, 
-                               voxel_len)
-    print("  Calculated volume with solvent only outside cage: {:f}".format(vol_empty))
+
+    vol_filled, grid_filled = volume.volume(solute_pos, solute_rad, solvent_pos, solvent_rad, 
+                                            voxel_len)
     print("  Calculated volume with solvent also inside cage:  {:f}".format(vol_filled))
     
-    # the difference should be s**3
-    err = s**3/2
-    if abs((vol_empty - vol_filled) - s**3) < err:
+    dv_actual = vol_empty - vol_filled
+    # the difference should be between:
+    dv_lb = (2*s)**3
+    # based on close packing of spheres in fcc latice; the pitch of tetrahedral 
+    # arangement of sphere centers is sqrt(6)*d/3, where d=2*s
+    dv_ub = (2*s+2*(2*s-6.0**(0.5)*2*s/3))**3
+    print("  Difference in volumes should be between {:f} and {:f}".format(dv_lb, dv_ub))
+    print("  Calculated difference in volumes: {:f}".format(vol_empty-vol_filled))
+    if dv_lb < dv_actual and dv_actual < dv_ub:
         print("  TEST PASSED")
     else:
         print("  TEST FAILED")
-
 
 
 def show_protein_surface():
