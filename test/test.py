@@ -122,12 +122,12 @@ def test_2sphere_overlapping():
 
 def test_protein():
     vol = pdb2volume.PDBVolume('villin.pdb', 
-                                     'cavity.lib.autogen', voxel_len=0.5).run()
+                               'radii.lib', voxel_len=0.5).run()
     print(vol)
 
 def show_protein_surface():
     vol, grid = pdb2volume.PDBVolume('villin.pdb', 
-                                     'cavity.lib.autogen', voxel_len=0.5).run()
+                                     'radii.lib', voxel_len=0.5).run()
     print(vol)
     fig = pyplot.figure()
     ax = fig.add_subplot(111, projection='3d')
@@ -142,7 +142,8 @@ def show_protein_surface():
     pyplot.show()
 
 if __name__ == "__main__":
-    test_simple()
-    test_simple_overlap()
-    test_2sphere()
+    #test_simple()
+    #test_simple_overlap()
+    #test_2sphere()
     test_2sphere_overlapping()
+    test_protein()
