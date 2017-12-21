@@ -65,7 +65,7 @@ def test_2sphere():
 
     solvent_pos = numpy.array(((16,0,0),), dtype=numpy.float64)
     solvent_rad = 1.4
-    voxel_len = 0.03
+    voxel_len = 0.02
 
     print("Test: two non-overlapping atoms of radius 3")
     vol = volume.volume(solute_pos, solute_rad, solvent_pos, solvent_rad, 
