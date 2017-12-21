@@ -134,6 +134,116 @@ def test_protein():
         print("  TEST FAILED")
         return 1
 
+def test_void():
+    print("Test: capsid structure with void")
+    s = 1.4
+
+
+    # Make a cube of spheres.  the edge length of the cube is 4*s, where s is
+    # the radius of cube.
+    #
+    #
+    #        *      *      *
+    #    
+    #
+    #        *      *      *
+    #             
+    #          
+    #        *      *      *
+    # The space between surfaces of spheres on the diagonal is 2*(sqrt(2) - 1)*s
+    # Since 2*(sqrt(2)-1) < 1, a water of radius s will not fit through the spaces.
+    #
+
+    solute_pos = numpy.array(((0  ,0  ,0  ),
+                              (2*s,0  ,0  ),
+                              (4*s,0  ,0  ),
+                              (6*s,0  ,0  ),
+                              (0  ,2*s,0  ),
+                              (2*s,2*s,0  ),
+                              (4*s,2*s,0  ),
+                              (6*s,2*s,0  ),
+                              (0  ,4*s,0  ),
+                              (2*s,4*s,0  ),
+                              (4*s,4*s,0  ),
+                              (6*s,4*s,0  ),
+                              (0  ,6*s,0  ),
+                              (2*s,6*s,0  ),
+                              (4*s,6*s,0  ),
+                              (6*s,6*s,0  ),
+
+                              (0  ,0  ,2*s),
+                              (2*s,0  ,2*s),
+                              (4*s,0  ,2*s),
+                              (0  ,2*s,2*s),
+                             #(2*s,2*s,2*s), # skip this one, since it's in the middle of the cube
+                             #(4*s,2*s,2*s),
+                              (0  ,4*s,2*s),
+                             #(2*s,4*s,2*s),
+                             #(4*s,4*s,2*s),
+                              (0  ,6*s,2*s),
+                              (2*s,6*s,2*s),
+                              (4*s,6*s,2*s),
+                              (6*s,6*s,2*s),
+
+                              (0  ,0  ,4*s),
+                              (2*s,0  ,4*s),
+                              (4*s,0  ,4*s),
+                              (0  ,2*s,4*s),
+                             #(2*s,2*s,4*s),
+                             #(4*s,2*s,4*s),
+                              (0  ,4*s,4*s),
+                             #(2*s,4*s,4*s),
+                             #(4*s,4*s,4*s),
+                              (0  ,6*s,4*s),
+                              (2*s,6*s,4*s),
+                              (4*s,6*s,4*s),
+                              (6*s,6*s,4*s),
+
+                              (0  ,0  ,6*s),
+                              (2*s,0  ,6*s),
+                              (4*s,0  ,6*s),
+                              (0  ,2*s,6*s),
+                              (2*s,2*s,6*s),
+                              (4*s,2*s,6*s),
+                              (0  ,4*s,6*s),
+                              (2*s,4*s,6*s),
+                              (4*s,4*s,6*s),
+                              (0  ,6*s,6*s),
+                              (2*s,6*s,6*s),
+                              (4*s,6*s,6*s),
+                              (6*s,6*s,6*s)), dtype=numpy.float64)
+
+
+    solute_rad = numpy.ones(solute_pos.shape[0])*s
+
+    # one solvent outside cube
+    solvent_pos = numpy.array(((10*s,0,0),), dtype=numpy.float64)
+    solvent_rad = s
+
+    voxel_len = 0.05
+
+    vol_empty = volume.volume(solute_pos, solute_rad, solvent_pos, solvent_rad, 
+                              voxel_len)
+
+
+    # Now include a solvent inside the cube.
+    solvent_pos = numpy.array(((10*s,0,0),
+                               (3*s,3*s,3*s)), dtype=numpy.float64)
+
+    vol_filled = volume.volume(solute_pos, solute_rad, solvent_pos, solvent_rad, 
+                               voxel_len)
+    print("  Calculated volume with solvent only outside cage: {:f}".format(vol_empty))
+    print("  Calculated volume with solvent also inside cage:  {:f}".format(vol_filled))
+    
+    # the difference should be s**3
+    err = s**3/2
+    if abs((vol_empty - vol_filled) - s**3) < err:
+        print("  TEST PASSED")
+    else:
+        print("  TEST FAILED")
+
+
+
 def show_protein_surface():
     vol, grid = pdb2volume.PDBVolume('villin.pdb', 
                                      'radii.lib', voxel_len=0.5).run()
@@ -151,8 +261,9 @@ def show_protein_surface():
     pyplot.show()
 
 if __name__ == "__main__":
-    test_simple()
-    test_simple_overlap()
-    test_2sphere()
-    test_2sphere_overlapping()
-    test_protein()
+    #test_simple()
+    #test_simple_overlap()
+    #test_2sphere()
+    #test_2sphere_overlapping()
+    #test_protein()
+    test_void()
