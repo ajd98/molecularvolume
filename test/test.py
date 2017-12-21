@@ -1,11 +1,11 @@
 #!/usr/bin/env python
-import pdb2volume
 import numpy
 import matplotlib.pyplot as pyplot
 from mpl_toolkits.mplot3d import Axes3D
 import sys
 sys.path.append('../')
 import volume
+import pdb2volume
 
 def test_simple():
     solute_pos = numpy.array(((0,0,0),), dtype=numpy.float64)
