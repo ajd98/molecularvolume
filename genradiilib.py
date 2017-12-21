@@ -26,6 +26,7 @@ class RadiiLibGen(object):
         self._load()
         self.build_map()
         self.print_radii_lib()
+        self.atomswithnanradii = {}
 
     def _load_atom_name(self):
         arr = []
@@ -133,8 +134,9 @@ class RadiiLibGen(object):
             r = (2*acoef/bcoef)**(1./6)/2
         else:
             r = 0
-        if numpy.isnan(r):
+        if numpy.isnan(r) and not atomtypeindex in self.atomswithnanradii:
             print("Radius is zero for atom type index: {:d}".format(atomtypeindex) )
+            self.atomswithnanradii.add(atomtypeindex)
             r = 0
         return r
 
@@ -156,7 +158,7 @@ class RadiiLibGen(object):
     def print_radii_lib(self):
         outfile = open(self.outpath,'w+')
         lines_to_write = []
-        for (reslabel, atomname), vdw_r in self.map.iteritems():
+        for (reslabel, atomname), vdw_r in self.map.items():
             atomname = atomname.strip()
             if len(atomname) == 1:
                 atomname = " {:s}  ".format(atomname)
@@ -178,7 +180,7 @@ class RadiiLibGen(object):
 class RadiiLibGenTool(RadiiLibGen):
     def __init__(self):
         self._parse_args()
-        super(RadiiLibGen, self).__init__(self.args.parmpath, self.args.output)
+        super(RadiiLibGenTool, self).__init__(self.args.parmpath, self.args.output)
 
     def _parse_args(self):
         parser = argparse.ArgumentParser()
