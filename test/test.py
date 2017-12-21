@@ -102,8 +102,8 @@ def test_2sphere_overlapping():
                               voxel_len)
     
     # volume of sphere 0 + volume of sphere 1 - volume of intersection
-    h = (solute_rad[0]+solvent_rad)/2
-    r = solute_rad[0]+solvent_rad
+    h = (sr+solvent_rad) - (solute_pos[1,0] - solute_pos[0,0])/2
+    r = sr+solvent_rad
     analytical_vol = numpy.pi*4./3*r**3 \
                    + numpy.pi*4./3*r**3 \
                    - 2*1./3*numpy.pi*h**2*(3*r-h)
@@ -145,3 +145,4 @@ if __name__ == "__main__":
     test_simple()
     test_simple_overlap()
     test_2sphere()
+    test_2sphere_overlapping()
