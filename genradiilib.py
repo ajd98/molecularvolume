@@ -134,8 +134,9 @@ class RadiiLibGen(object):
             r = (2*acoef/bcoef)**(1./6)/2
         else:
             r = 0
-        if numpy.isnan(r) and not atomtypeindex in self.atomswithnanradii:
-            print("Radius is zero for atom type index: {:d}".format(atomtypeindex) )
+        if numpy.isnan(r):
+            if not atomtypeindex in self.atomswithnanradii:
+                print("Radius is zero for atom type index: {:d}".format(atomtypeindex) )
             self.atomswithnanradii.add(atomtypeindex)
             r = 0
         return r
