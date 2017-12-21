@@ -275,9 +275,9 @@ def show_protein_surface():
     pyplot.show()
 
 if __name__ == "__main__":
-    #test_simple()
-    #test_simple_overlap()
-    #test_2sphere()
-    #test_2sphere_overlapping()
-    #test_protein()
+    test_simple()
+    test_simple_overlap()
+    test_2sphere()
+    test_2sphere_overlapping()
+    test_protein()
     test_void()
