@@ -1,8 +1,6 @@
 #!/usr/bin/env python
 import pdb2volume
 import numpy
-import matplotlib.pyplot as pyplot
-from mpl_toolkits.mplot3d import Axes3D
 import sys
 sys.path.append('../')
 import volume
@@ -15,8 +13,30 @@ def test_simple():
     voxel_len = 0.05
 
     print("Test: single atom of radius 3")
-    vol = volume.volume(solute_pos, solute_rad, solvent_pos, solvent_rad, 
-                              voxel_len)
+    vol = volume.volume_explicit_sol(solute_pos, solute_rad, solvent_pos, solvent_rad, 
+                                     voxel_len)
+    
+    analytical_vol = numpy.pi*4./3*(solute_rad[0]+solvent_rad)**3
+
+    print("  calculated volume: {:f}".format(vol))
+    print("  analytical volume: {:f}".format(analytical_vol))
+    perr = 100*abs(vol-analytical_vol)/analytical_vol
+    print("  percent error:     {:f}%".format(perr))
+    if perr < 1:
+        print("  TEST PASSED")
+        return 0
+    else:
+        print("  TEST FAILED")
+        return 1
+
+def test_simple_inexplicit():
+    solute_pos = numpy.array(((0,0,0),), dtype=numpy.float64)
+    solute_rad = numpy.array((3,), dtype=numpy.float64)
+    solvent_rad = 1.4
+    voxel_len = 0.05
+
+    print("Test: single atom of radius 3")
+    vol = volume.volume(solute_pos, solute_rad, solvent_rad, voxel_len)
     
     analytical_vol = numpy.pi*4./3*(solute_rad[0]+solvent_rad)**3
 
@@ -40,8 +60,8 @@ def test_simple_overlap():
     voxel_len = 0.05
 
     print("Test: two atoms of radius 3, completely overlapping")
-    vol = volume.volume(solute_pos, solute_rad, solvent_pos, solvent_rad, 
-                              voxel_len)
+    vol = volume.volume_explicit_sol(solute_pos, solute_rad, solvent_pos, solvent_rad, 
+                                     voxel_len)
     
     analytical_vol = numpy.pi*4./3*(solute_rad[0]+solvent_rad)**3
 
@@ -68,7 +88,7 @@ def test_2sphere():
     voxel_len = 0.02
 
     print("Test: two non-overlapping atoms of radius 3")
-    vol = volume.volume(solute_pos, solute_rad, solvent_pos, solvent_rad, 
+    vol = volume.volume_explicit_sol(solute_pos, solute_rad, solvent_pos, solvent_rad, 
                               voxel_len)
     
     r = solute_rad[0]+solvent_rad
@@ -98,8 +118,8 @@ def test_2sphere_overlapping():
     voxel_len = 0.05
 
     print("Test: two partially overlapping atoms of radius 3")
-    vol = volume.volume(solute_pos, solute_rad, solvent_pos, solvent_rad, 
-                              voxel_len)
+    vol = volume.volume_explicit_sol(solute_pos, solute_rad, solvent_pos, solvent_rad, 
+                                     voxel_len)
     
     # volume of sphere 0 + volume of sphere 1 - volume of intersection
     h = (sr+solvent_rad) - (solute_pos[1,0] - solute_pos[0,0])/2
@@ -231,8 +251,8 @@ def test_void():
 
     voxel_len = 0.1
 
-    vol_empty = volume.volume(solute_pos, solute_rad, solvent_pos, solvent_rad, 
-                              voxel_len)
+    vol_empty = volume.volume_explicit_sol(solute_pos, solute_rad, solvent_pos, solvent_rad, 
+                                           voxel_len)
     print("  Calculated volume with solvent only outside cage: {:f}".format(vol_empty))
 
     # Now include a solvent inside the cube.
@@ -240,8 +260,8 @@ def test_void():
                                (3*s,3*s,3*s)), dtype=numpy.float64)
 
 
-    vol_filled = volume.volume(solute_pos, solute_rad, solvent_pos, solvent_rad, 
-                               voxel_len)
+    vol_filled = volume.volume_explicit_sol(solute_pos, solute_rad, solvent_pos, solvent_rad, 
+                                            voxel_len)
     print("  Calculated volume with solvent also inside cage:  {:f}".format(vol_filled))
     
     dv_actual = vol_empty - vol_filled
@@ -253,6 +273,14 @@ def test_void():
     print("  Difference in volumes should be between {:f} and {:f}".format(dv_lb, dv_ub))
     print("  Calculated difference in volumes: {:f}".format(vol_empty-vol_filled))
     if dv_lb < dv_actual and dv_actual < dv_ub:
+        print("  TEST PASSED")
+    else:
+        print("  TEST FAILED")
+
+    vol_inexplicit = volume.volume(solute_pos, solute_rad, solvent_rad, voxel_len)
+    print("  Calculated volume with solvent automatically placed outside: {:f}"\
+          .format(vol_inexplicit))
+    if abs(vol_inexplicit-vol_empty)/vol_empty < .01:
         print("  TEST PASSED")
     else:
         print("  TEST FAILED")
@@ -276,6 +304,7 @@ def show_protein_surface():
 
 if __name__ == "__main__":
     test_simple()
+    test_simple_inexplicit()
     test_simple_overlap()
     test_2sphere()
     test_2sphere_overlapping()
