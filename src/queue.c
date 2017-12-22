@@ -8,6 +8,7 @@ struct Queue* newQueue(unsigned long capacity)
     struct Queue* queue = (struct Queue*)malloc(sizeof(struct Queue));
     if (!queue) {
         printf("Memory error. Failed to allocate memory.");
+        exit(1);
     }
     queue->front = 0;
     queue->size = 0;
