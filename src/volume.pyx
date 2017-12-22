@@ -28,7 +28,7 @@ cpdef double volume_explicit_sol(
                     numpy.ndarray[numpy.float64_t, ndim=1] _solute_rad, 
                     numpy.ndarray[numpy.float64_t, ndim=2] _solvent_pos, 
                     double _solvent_rad,
-                    double _voxel_len):
+                    double _voxel_len) except -1:
     '''
     -----------
     Parameters
@@ -79,7 +79,8 @@ cpdef double volume_explicit_sol(
         double *solvent_ceil = <double *>malloc(nsolvent*3*sizeof(double))
     if (not solute_pos) or (not solute_rad) or (not solvent_pos) or\
             (not solvent_floor) or (not solvent_ceil):
-        raise MemoryError("Failed to allocated arrays")
+        print("Failed to allocate arrays")
+        return -1
     
 
     # assign solute_pos, solute_rad, and solvent_pos
@@ -135,7 +136,8 @@ cpdef double volume_explicit_sol(
     cdef unsigned char *grid = <unsigned char *>malloc(nx*ny*nz*sizeof(unsigned char))
     cdef unsigned char *visited_grid = <unsigned char *>malloc(nx*ny*nz*sizeof(unsigned char))
     if (not grid) or (not visited_grid):
-        raise MemoryError("Failed to allocate voxel grids")
+        print("Failed to allocate voxel arrays")
+        return -1
     with nogil:
         for i in range(nx*ny*nz):
             grid[i] = 0
@@ -197,7 +199,8 @@ cpdef double volume_explicit_sol(
     # Start making the true c-style array
     cdef int *moves = <int *>malloc(3*26*sizeof(int))
     if not moves:
-        raise MemoryError("Failed to allocate memory for ``moves`` array.")
+        print("Failed to allocate ``moves`` array")
+        return -1
     with nogil:
         for i in range(26):
             moves[3*i+0] = _moves[i,0]
@@ -365,7 +368,8 @@ cpdef double volume(numpy.ndarray[numpy.float64_t, ndim=2] _solute_pos,
         double *solute_rad = <double *>malloc(nsolute*sizeof(double))
 
     if (not solute_pos) or (not solute_rad):
-        raise MemoryError("Failed to allocated arrays")
+        print("Failed to allocate arrays")
+        return -1
 
     # assign solute_pos, solute_rad
     with nogil:
@@ -403,7 +407,8 @@ cpdef double volume(numpy.ndarray[numpy.float64_t, ndim=2] _solute_pos,
     cdef unsigned char *grid = <unsigned char *>malloc(nx*ny*nz*sizeof(unsigned char))
     cdef unsigned char *visited_grid = <unsigned char *>malloc(nx*ny*nz*sizeof(unsigned char))
     if (not grid) or (not visited_grid):
-        raise MemoryError("Failed to allocate voxel grids")
+        print("Failed to allocate voxel arrays")
+        return -1
     with nogil:
         for i in range(nx*ny*nz):
             grid[i] = 0
@@ -448,7 +453,8 @@ cpdef double volume(numpy.ndarray[numpy.float64_t, ndim=2] _solute_pos,
     # Start making the true c-style array
     cdef int *moves = <int *>malloc(3*26*sizeof(int))
     if not moves:
-        raise MemoryError("Failed to allocate ``moves`` array")
+        print("Failed to allocate ``moves`` array")
+        return -1
     with nogil:
         for i in range(26):
             moves[3*i+0] = _moves[i,0]
