@@ -17,7 +17,7 @@ struct Queue* newQueue(unsigned long capacity)
     queue->items = (struct Triple*)malloc(capacity*sizeof(struct Triple));
     // check if pointer is null
     if (!queue->items){
-        printf("Failed to allocate memory for queue; requested %ld bytes\n", 
+        printf("Failed to allocate memory for queue; requested %lu bytes\n", 
                capacity*sizeof(struct Triple));
         exit(1);
     }
