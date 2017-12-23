@@ -1,6 +1,7 @@
 #include "queue.h"
 #include <math.h>
 #include <stdlib.h>
+#include <limits.h>
 
 double dist(double x1, double y1, double z1, double x2, double y2, double z2) {
     /*
@@ -125,10 +126,11 @@ void floodfill(int ix, int iy, int iz, int nx, int ny, int nz, double voxel_len,
                 newcoord.x = coord.x+moves[3*i];
                 newcoord.y = coord.y+moves[3*i+1];
                 newcoord.z = coord.z+moves[3*i+2];
+                // check that x,y,z is in bounds of grid; 
                 if ((visited_grid[newcoord.x*ny*nz + newcoord.y*nz + newcoord.z]==0) 
-                     && (newcoord.x >= 0) && (newcoord.x < nx) 
-                     && (newcoord.y >= 0) && (newcoord.y < ny) 
-                     && (newcoord.z >= 0) && (newcoord.z < nz))
+                     && (newcoord.x != USHRT_MAX) && (newcoord.x < nx) 
+                     && (newcoord.y != USHRT_MAX) && (newcoord.y < ny) 
+                     && (newcoord.z != USHRT_MAX) && (newcoord.z < nz))
                 {
                     visited_grid[newcoord.x*ny*nz + newcoord.y*nz + newcoord.z] = 1;
                     append(newcoord, queue);
