@@ -3,6 +3,7 @@
 #cython: boundscheck=False, wraparound=False
 cimport cython
 cimport numpy
+cimport libc.limits
 import numpy
 from libc.math cimport floor, ceil, sqrt
 from libc.stdlib cimport malloc, free
@@ -131,6 +132,12 @@ cpdef double volume_explicit_sol(
     nx = numpy.ceil((x_max - x_min)/voxel_len) + 1
     ny = numpy.ceil((y_max - y_min)/voxel_len) + 1
     nz = numpy.ceil((z_max - z_min)/voxel_len) + 1
+    if (nx>=libc.limits.USHRT_MAX) or (ny>=libc.limits.USHRT_MAX) or (nx>=libc.limits.USHRT_MAX):
+        print("The voxel grid contains too many voxels in the x, y, or z "\
+              "dimension. The max number of voxels in any direction is {:d} "\
+              "and the requested numbers of voxels are ({:d},{:d},{:d}). "
+              "ERROR.".format(libc.limits.USHRT_MAX, nx, ny, nz))
+        return -1
 
     # unsigned char is 8-bit; I use it as a bool 
     cdef unsigned char *grid = <unsigned char *>malloc(nx*ny*nz*sizeof(unsigned char))
