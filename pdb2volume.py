@@ -22,7 +22,8 @@ class PDBStructure(object):
                                       )
 
 class PDBVolume(object):
-    def __init__(self, pdbpath, radiipath, solventname='WAT', solventrad=1.4, voxel_len=0.5):
+    def __init__(self, pdbpath, radiipath, explicitsolvent=False, solventname='WAT', solventrad=1.4, voxel_len=0.5):
+        self.use_explicit_solvent = explicitsolvent
         self.solventname = solventname
         self.solventrad = 1.4
         self.voxel_len = voxel_len
@@ -70,5 +71,9 @@ class PDBVolume(object):
         solute_rad = numpy.array(solute_rad, dtype=numpy.float64)
         
 
-        return volume.volume_explicit_sol(solute, solute_rad, solvent, 
-                                          self.solventrad, self.voxel_len)
+        if self.use_explicit_solvent:
+            return volume.volume_explicit_sol(solute, solute_rad, solvent, 
+                                              self.solventrad, self.voxel_len)
+        else:
+            return volume.volume(solute, solute_rad, self.solventrad, 
+                                 self.voxel_len)
