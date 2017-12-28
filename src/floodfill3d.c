@@ -95,7 +95,9 @@ void floodfill(int ix, int iy, int iz, int nx, int ny, int nz, double voxel_len,
      */
 
     // Create a *huge* queue
-    unsigned long nitems = nx*ny*nz;
+    unsigned long nitems = nx;
+    nitems *= ny;
+    nitems *= nz;
     struct Queue* queue = newQueue(nitems); 
     struct Triple coord;
     struct Triple newcoord;
