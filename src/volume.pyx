@@ -140,11 +140,11 @@ cpdef double volume_explicit_sol(
         return -1
 
     # unsigned char is 8-bit; I use it as a bool 
-    cdef long size = 1;
-    size *= nx;
-    size *= ny;
-    size *= nz;
-    size *= sizeof(unsigned char);
+    cdef long size = 1
+    size *= nx
+    size *= ny
+    size *= nz
+    size *= sizeof(unsigned char)
     cdef unsigned char *grid = <unsigned char *>malloc(size)
     cdef unsigned char *visited_grid = <unsigned char *>malloc(size)
     if (not grid) or (not visited_grid):
