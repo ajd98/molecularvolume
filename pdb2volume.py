@@ -1,4 +1,5 @@
 #!/usr/bin/env python
+import argparse
 import numpy
 import sys
 sys.path.append('../')
@@ -77,3 +78,53 @@ class PDBVolume(object):
         else:
             return volume.volume(solute, solute_rad, self.solventrad, 
                                  self.voxel_len)
+
+class PDB2VolumeTool(PDBVolume):
+    def __init__(self):
+        self._parse_args()
+        super(PDB2VolumeTool, self).__init__(self.args.pdbpath, 
+                                             self.args.radiipath,
+                                             explicitsolvent=self.args.explicitsolvent,
+                                             solventname=self.args.solventname,
+                                             solventrad=self.args.solventrad,
+                                             voxel_len=self.args.voxel_len)
+        v = self.run()
+        print(u"Volume: {:.01f} \u00c5^3")
+
+
+    def _parse_args(self):
+        parser = argparse.ArgumentParser()
+
+        parser.add_argument("-p", "--pdbpath", dest='pdbpath', 
+                            type=str,
+                            help="Path to the input PDB file")
+
+        parser.add_argument("-r", "--radiipath", dest="radiipath",
+                            type=str,
+                            default="radii.lib",
+                            help="Path to the radii library file")
+
+        parser.add_argument("-e", "--explicit-solvent", dest="explicitsolvent", 
+                            action="store_true",
+                            help="Use explicit water positions to account for "
+                            "void spaces filled with water. Void spaces with "
+                            "internal waters will not count toward the "
+                            "molecular volume")
+
+        parser.add_argument("-sr", "--solvent-radius", dest="solventrad", default=1.4,
+                            type=float,
+                            help="The radius of the solvent molecules (which "
+                            "are assummed to be spherical)")
+
+        parser.add_argument("-sn", "--solvent-name", dest="solventname", default="WAT",
+                            type=str,
+                            help="The residue name of the solvent (used only if "
+                            "-e/--explicit-solvent is specified)")
+
+        parser.add_argument("-v", "--voxel-len", dest="voxel_len", default=0.1, 
+                            type=float,
+                            help="The edge length of the (cubic) voxels.")
+        self.args = parser.parse_args()
+
+if __name__ == "__main__":
+    PDB2VolumeTool()
