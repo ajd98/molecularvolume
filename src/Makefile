@@ -2,7 +2,7 @@
 
 CC=gcc
 IDIR=../include
-CFLAGS=-I$(IDIR) -Wall -L. -g
+CFLAGS=-I$(IDIR) -Wall -L. -g -std=gnu99 -fPIC
 
 _DEPS=queue.h 
 DEPS=$(patsubst %,$(IDIR)/%,$(_DEPS))
