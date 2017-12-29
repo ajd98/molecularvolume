@@ -145,9 +145,19 @@ def test_protein():
 
     try:
         vol = pdb2volume.PDBVolume('villin.pdb', 
-                                   'radii.lib', voxel_len=0.5).run()
-        print("  calculated volume: {:f}".format(vol))
+                                   'radii.lib', 
+                                   explicitsolvent=True,
+                                   voxel_len=0.1).run()
+
+        print("  calculated volume, using explicit waters: {:f}".format(vol))
+
+        vol = pdb2volume.PDBVolume('villin.pdb', 
+                                   'radii.lib', 
+                                   explicitsolvent=False,
+                                   voxel_len=0.1).run()
+        print("  calculated volume, simple calculation: {:f}".format(vol))
         print("  analytical volume unknown.")
+
         print("  TEST PASSED")
         return 0
     except:
