@@ -18,7 +18,7 @@ space in the interior of the solute is included as part of the volume.
 
 ## Requirements: 
 Software requirements:
-* gcc (including libm)
+* gcc (version >=6.3)
 * Python (version 2.7 or 3.6)
 
 Required Python packages:
