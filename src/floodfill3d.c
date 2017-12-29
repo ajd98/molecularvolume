@@ -68,7 +68,7 @@ unsigned char is_free(double voxx, double voxy, double voxz, double* solute_pos,
 
 
 void floodfill(int ix, int iy, int iz, int nx, int ny, int nz, double voxel_len,
-               unsigned char* visited_grid, unsigned char* grid, int* moves,
+               unsigned char* visited_grid, unsigned char* grid,
                double* solute_pos, double* solute_rad, int nsolute, 
                double solvent_rad)
 {
@@ -86,7 +86,6 @@ void floodfill(int ix, int iy, int iz, int nx, int ny, int nz, double voxel_len,
      * visited_grid: shape (nx, ny, nz) array; 1 if visited, 0 otherwise
      * grid: shape (nx, ny, nz) array; 1 if accessible by moves on solvent; 
      *     0 otherwise
-     * moves: shape (26,3) array; possible moves
      * solute_pos: shape (nsolute, 3) array; (x,y,z) coordinates of each solute
      *     atom
      * solute_rad: shape (nsolute,) array; radius of each solute atom
@@ -105,6 +104,34 @@ void floodfill(int ix, int iy, int iz, int nx, int ny, int nz, double voxel_len,
     coord.x = (unsigned short int)ix;
     coord.y = (unsigned short int)iy;
     coord.z = (unsigned short int)iz;
+
+    int nmoves = 6;
+    int* moves = (int*)malloc(nmoves*3*sizeof(int));
+    moves[3*0+0] = 0;
+    moves[3*0+1] = 0;
+    moves[3*0+2] = -1;
+
+    moves[3*1+0] = 0;
+    moves[3*1+1] = 0;
+    moves[3*1+2] = 1;
+
+    moves[3*2+0] = 0;
+    moves[3*2+1] = -1;
+    moves[3*2+2] = 0;
+
+    moves[3*3+0] = 0;
+    moves[3*3+1] = 1;
+    moves[3*3+2] = 0;
+
+    moves[3*4+0] = -1;
+    moves[3*4+1] = 0;
+    moves[3*4+2] = 0;
+
+    moves[3*5+0] = 1;
+    moves[3*5+1] = 0;
+    moves[3*5+2] = 0;
+
+
     if (append(coord, queue)==1){
         exit(1);
     }
@@ -124,7 +151,7 @@ void floodfill(int ix, int iy, int iz, int nx, int ny, int nz, double voxel_len,
         {
             grid[coord.x*ny*nz + coord.y*nz + coord.z] = 1;
 
-            for (i=0;i<26;i++) {
+            for (i=0;i<nmoves;i++) {
                 newcoord.x = coord.x+moves[3*i];
                 newcoord.y = coord.y+moves[3*i+1];
                 newcoord.z = coord.z+moves[3*i+2];

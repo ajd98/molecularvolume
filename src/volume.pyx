@@ -19,7 +19,7 @@ cdef extern from "floodfill3d.h":
                           double* solute_rad, int nsolute, double solvent_rad) nogil
     
     void floodfill(int ix, int iy, int iz, int nx, int ny, int nz, double voxel_len,
-                   unsigned char* visited_grid, unsigned char* grid, int* moves,
+                   unsigned char* visited_grid, unsigned char* grid, 
                    double* solute_pos, double* solute_rad, int nsolute, 
                    double solvent_rad) nogil
     
@@ -170,54 +170,6 @@ cpdef double volume_explicit_sol(
 
             solvent_floor[3*i+2] = floor(solz/voxel_len)*voxel_len
             solvent_ceil[3*i+2] = ceil(solz/voxel_len)*voxel_len
-
-
-    # possible directions to move; first we make _moves, which is a memoryview
-    # then we convert the memoryview to a true C-style array
-    cdef int[:,:] _moves = numpy.array([[0,0,-1],
-                                        [0,0,1],
-                                                   
-                                        [0,-1,-1],
-                                        [0,-1,0],
-                                        [0,-1,1],
-                                                   
-                                        [0,1,-1],
-                                        [0,1,0],
-                                        [0,1,1],
-                                                   
-                                        [-1,-1,-1],
-                                        [-1,-1,0],
-                                        [-1,-1,1],
-                                                   
-                                        [-1,0,-1],
-                                        [-1,0,0],
-                                        [-1,0,1],
-                                                   
-                                        [-1,1,-1],
-                                        [-1,1,0],
-                                        [-1,1,1],
-                                                   
-                                        [1,-1,-1],
-                                        [1,-1,0],
-                                        [1,-1,1],
-                                                   
-                                        [1,0,-1],
-                                        [1,0,0],
-                                        [1,0,1],
-                                                   
-                                        [1,1,-1],
-                                        [1,1,0],
-                                        [1,1,1]], dtype=numpy.int32)
-    # Start making the true c-style array
-    cdef int *moves = <int *>malloc(3*26*sizeof(int))
-    if not moves:
-        print("Failed to allocate ``moves`` array")
-        return -1
-    with nogil:
-        for i in range(26):
-            moves[3*i+0] = _moves[i,0]
-            moves[3*i+1] = _moves[i,1]
-            moves[3*i+2] = _moves[i,2]
 
     cdef int ptcnt = 0
     cdef double vol

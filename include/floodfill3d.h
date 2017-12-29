@@ -9,7 +9,7 @@ unsigned char is_free(double voxx, double voxy, double voxz, double* solute_pos,
                       double* solute_rad, int nsolute, double solvent_rad);
 
 void floodfill(int ix, int iy, int iz, int nx, int ny, int nz, double voxel_len,
-               unsigned char* visited_grid, unsigned char* grid, int* moves,
+               unsigned char* visited_grid, unsigned char* grid, 
                double* solute_pos, double* solute_rad, int nsolute, 
                double solvent_rad);
 
