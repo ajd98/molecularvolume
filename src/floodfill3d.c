@@ -107,6 +107,10 @@ void floodfill(int ix, int iy, int iz, int nx, int ny, int nz, double voxel_len,
 
     int nmoves = 6;
     int* moves = (int*)malloc(nmoves*3*sizeof(int));
+    if (!moves) {
+        printf("MemoryError.  Cannot allocate memory for moves array.");
+        exit(1);
+    }
     moves[3*0+0] = 0;
     moves[3*0+1] = 0;
     moves[3*0+2] = -1;
@@ -168,4 +172,5 @@ void floodfill(int ix, int iy, int iz, int nx, int ny, int nz, double voxel_len,
         }  
     }
     delQueue(queue);
+    free(moves);
 }

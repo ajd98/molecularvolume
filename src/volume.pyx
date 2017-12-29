@@ -228,35 +228,35 @@ cpdef double volume_explicit_sol(
 
             if is_free(x, y, z, solute_pos, solute_rad, nsolute, solvent_rad):
                 floodfill(ix, iy, iz, nx, ny, nz, voxel_len, visited_grid, grid, 
-                        moves, solute_pos, solute_rad, nsolute, solvent_rad)
+                          solute_pos, solute_rad, nsolute, solvent_rad)
 
             if is_free(x, y, Z, solute_pos, solute_rad, nsolute, solvent_rad):
                 floodfill(ix, iy, iZ, nx, ny, nz, voxel_len, visited_grid, grid, 
-                        moves, solute_pos, solute_rad, nsolute, solvent_rad)
+                          solute_pos, solute_rad, nsolute, solvent_rad)
 
             if is_free(x, Y, z, solute_pos, solute_rad, nsolute, solvent_rad):
                 floodfill(ix, iY, iz, nx, ny, nz, voxel_len, visited_grid, grid, 
-                        moves, solute_pos, solute_rad, nsolute, solvent_rad)
+                          solute_pos, solute_rad, nsolute, solvent_rad)
 
             if is_free(x, Y, Z, solute_pos, solute_rad, nsolute, solvent_rad):
                 floodfill(ix, iY, iZ, nx, ny, nz, voxel_len, visited_grid, grid, 
-                        moves, solute_pos, solute_rad, nsolute, solvent_rad)
+                          solute_pos, solute_rad, nsolute, solvent_rad)
 
             if is_free(X, y, z, solute_pos, solute_rad, nsolute, solvent_rad):
                 floodfill(iX, iy, iz, nx, ny, nz, voxel_len, visited_grid, grid, 
-                        moves, solute_pos, solute_rad, nsolute, solvent_rad)
+                          solute_pos, solute_rad, nsolute, solvent_rad)
 
             if is_free(X, y, Z, solute_pos, solute_rad, nsolute, solvent_rad):
                 floodfill(iX, iy, iZ, nx, ny, nz, voxel_len, visited_grid, grid, 
-                        moves, solute_pos, solute_rad, nsolute, solvent_rad)
+                          solute_pos, solute_rad, nsolute, solvent_rad)
 
             if is_free(X, Y, z, solute_pos, solute_rad, nsolute, solvent_rad):
                 floodfill(iX, iY, iz, nx, ny, nz, voxel_len, visited_grid, grid, 
-                        moves, solute_pos, solute_rad, nsolute, solvent_rad)
+                          solute_pos, solute_rad, nsolute, solvent_rad)
 
             if is_free(X, Y, Z, solute_pos, solute_rad, nsolute, solvent_rad):
                 floodfill(iX, iY, iZ, nx, ny, nz, voxel_len, visited_grid, grid, 
-                        moves, solute_pos, solute_rad, nsolute, solvent_rad)
+                          solute_pos, solute_rad, nsolute, solvent_rad)
 
         #find the volume
         for i in range(nx):
@@ -279,7 +279,6 @@ cpdef double volume_explicit_sol(
     free(solvent_pos)
     free(solvent_floor)
     free(solvent_ceil)
-    free(moves)
     return vol#, _grid
 
 cpdef double volume(numpy.ndarray[numpy.float64_t, ndim=2] _solute_pos, 
@@ -378,53 +377,6 @@ cpdef double volume(numpy.ndarray[numpy.float64_t, ndim=2] _solute_pos,
             grid[i] = 0
             visited_grid[i] = 0
 
-    # possible directions to move; first we make _moves, which is a memoryview
-    # then we convert the memoryview to a true C-style array
-    cdef int[:,:] _moves = numpy.array([[0,0,-1],
-                                        [0,0,1],
-                                                   
-                                        [0,-1,-1],
-                                        [0,-1,0],
-                                        [0,-1,1],
-                                                   
-                                        [0,1,-1],
-                                        [0,1,0],
-                                        [0,1,1],
-                                                   
-                                        [-1,-1,-1],
-                                        [-1,-1,0],
-                                        [-1,-1,1],
-                                                   
-                                        [-1,0,-1],
-                                        [-1,0,0],
-                                        [-1,0,1],
-                                                   
-                                        [-1,1,-1],
-                                        [-1,1,0],
-                                        [-1,1,1],
-                                                   
-                                        [1,-1,-1],
-                                        [1,-1,0],
-                                        [1,-1,1],
-                                                   
-                                        [1,0,-1],
-                                        [1,0,0],
-                                        [1,0,1],
-                                                   
-                                        [1,1,-1],
-                                        [1,1,0],
-                                        [1,1,1]], dtype=numpy.int32)
-    # Start making the true c-style array
-    cdef int *moves = <int *>malloc(3*26*sizeof(int))
-    if not moves:
-        print("Failed to allocate ``moves`` array")
-        return -1
-    with nogil:
-        for i in range(26):
-            moves[3*i+0] = _moves[i,0]
-            moves[3*i+1] = _moves[i,1]
-            moves[3*i+2] = _moves[i,2]
-
     cdef int ptcnt = 0
     cdef double vol
 
@@ -439,7 +391,7 @@ cpdef double volume(numpy.ndarray[numpy.float64_t, ndim=2] _solute_pos,
 
         if is_free(x, y, z, solute_pos, solute_rad, nsolute, solvent_rad):
             floodfill(ix, iy, iz, nx, ny, nz, voxel_len, visited_grid, grid, 
-                    moves, solute_pos, solute_rad, nsolute, solvent_rad)
+                      solute_pos, solute_rad, nsolute, solvent_rad)
 
         #find the volume
         for i in range(nx):
@@ -453,5 +405,4 @@ cpdef double volume(numpy.ndarray[numpy.float64_t, ndim=2] _solute_pos,
     free(visited_grid)
     free(solute_pos)
     free(solute_rad)
-    free(moves)
     return vol
