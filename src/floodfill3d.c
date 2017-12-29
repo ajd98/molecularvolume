@@ -1,6 +1,7 @@
 #include "queue.h"
 #include <math.h>
 #include <stdlib.h>
+#include <stdio.h>
 #include <limits.h>
 
 double dist(double x1, double y1, double z1, double x2, double y2, double z2) {
