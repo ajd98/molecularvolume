@@ -3,7 +3,8 @@
 #include <stdio.h>
 
 // Make a new queue with maximum capacity of ``capacity`` Triples
-struct Queue* newQueue(unsigned long capacity)
+struct Queue* 
+newQueue(unsigned long capacity)
 {
     struct Queue* queue = (struct Queue*)malloc(sizeof(struct Queue));
     if (!queue) {
@@ -24,7 +25,8 @@ struct Queue* newQueue(unsigned long capacity)
     return queue;
 }
 
-void delQueue(struct Queue* queue)
+void 
+delQueue(struct Queue* queue)
 {
     free(queue->items);
     free(queue);
@@ -32,7 +34,8 @@ void delQueue(struct Queue* queue)
 }
 
 // Check if the queue is full
-int isFull(struct Queue* queue)
+int 
+isFull(struct Queue* queue)
 {
     if (queue->capacity == queue->size){
         return 1;
@@ -41,7 +44,8 @@ int isFull(struct Queue* queue)
     }
 }
 
-int isEmpty(struct Queue* queue)
+int 
+isEmpty(struct Queue* queue)
 {
     if (queue->size == 0){
         return 1;
@@ -52,7 +56,8 @@ int isEmpty(struct Queue* queue)
 }
 
 // Add a Triple to the queue
-int append(struct Triple coords, struct Queue* queue)
+int 
+append(struct Triple coords, struct Queue* queue)
 {
     if (isFull(queue)){
         return 1; // error; queue is full
@@ -66,7 +71,8 @@ int append(struct Triple coords, struct Queue* queue)
 }
 
 // Always check that the queue is not empty before calling this!
-struct Triple pop(struct Queue* queue)
+struct Triple 
+pop(struct Queue* queue)
 {
     struct Triple item = queue->items[queue->front];
     queue->front = (queue->front+1)%(queue->capacity);
