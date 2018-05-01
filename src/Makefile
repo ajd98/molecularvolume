@@ -25,7 +25,4 @@ test: libfloodfill3d.a
 install: volume
 
 uninstall:
-	if [ -a test ]; then\
-      rm test ;\
-	fi;
-	rm *.so *.a *.o
+	-rm *.so *.a *.o test
