@@ -89,7 +89,7 @@ class PDB2VolumeTool(PDBVolume):
                                              solventrad=self.args.solventrad,
                                              voxel_len=self.args.voxel_len)
         v = self.run()
-        print(u"Volume: {:.01f} \u00c5^3".format(v))
+        print("Volume: {:.01f} Angstroms^3".format(v))
 
 
     def _parse_args(self):
