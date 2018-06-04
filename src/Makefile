@@ -22,10 +22,7 @@ libfloodfill3d.a: $(OBJ)
 install: volume.so
 
 clean:
-	if [ -a test ]; then\
-      rm test ;\
-	fi;
-	rm *.so *.a *.o
+	-rm test *.so *.a *.o
 
 test: libfloodfill3d.a
 	$(CC) test.c -O3 -o test $(CFLAGS) -lfloodfill3d -lm
